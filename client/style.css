@@ -1,0 +1,21 @@
+body {
+    background-color: rgb(200,200,200);
+    margin: 0px;
+    position: fixed;
+    overflow: hidden;
+}
+
+#container {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+
+#controls {
+    position: absolute;
+    width: 800px;
+    left: 0px;
+    top: 0px;
+    z-index: 2;
+    float: right;
+}
