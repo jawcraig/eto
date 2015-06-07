@@ -1,0 +1,153 @@
+{
+    "character": [
+        {
+            "name": "ant", "type": "walker", "model": "ant.json",
+            "move": 3, "turn": 3, "health": 30,
+            "items": [
+            {
+                "item": "minigun",
+                "position": {"x":0, "y":0, "z": 0},
+                "direction": {"x":0, "y":0, "z":0}
+            },
+            {
+                "item": "mines",
+                "position": {"x":0, "y":0, "z": 0},
+                "direction": {"x":0, "y":0, "z":0}
+            },
+            ]
+        },
+        {
+            "name": "spider", "type": "walker", "model": "spider.json",
+            "move": 2, "turn": 1, "health": 30,
+            "items": [{"item":"missiles"}, {"item":"melee"}]
+        }
+
+        {
+            "name": "tick", "type": "walker", "model": "tick.json",
+            "move": 1, "turn": 2, "health": 60,
+            "items": [{"item":"flamer"}, {"item":"jump"}]
+        }
+
+        {
+            "name": "bee", "type": "flyer", "model": "bee.json",
+            "move": 3, "turn": 1, "health": 20,
+            "items": [{"item":"minigun"}]
+        }
+        {
+            "name": "bumble", "type": "flyer", "model": "bumble.json",
+            "move": 2, "turn": 2, "health": 30,
+            "items": [{"item":"bombs"}]
+        }
+        {
+            "name": "wasp", "type": "flyer", "model": "wasp.json",
+            "move": 4, "turn": 3, "health": 10,
+            "items": [{"item":"rockets"}]
+        }
+    ],
+    "item": [
+        {
+            "name": "selfdestruct",
+            "ammo": 1,
+            "damage": 100,
+            "range": 100,
+        },
+        {
+            "name": "jump",
+            "damage": 10,
+            "range": 100,
+            "cooldown": 2,
+            "accuracy": 10,
+        },
+        {
+            "name": "minigun",
+            "model": "minigun.json",
+            "ammo": 1000,
+            "damage": 3,
+            "range": 1000,
+            "cooldown": 0.1,
+            "accuracy": 3 
+        },
+        {
+            "name": "autocannon",
+            "model": "autocannon.json",
+            "ammo": 800,
+            "damage": 5,
+            "range": 500,
+            "cooldown": 0.2,
+            "accuracy": 1 
+        },
+        {
+            "name": "grenades",
+            "model": "grenadelauncher.json",
+            "ammo": 10,
+            "damage": 20,
+            "splash": 10,
+            "range": 1000,
+            "cooldown": 0.1,
+            "accuracy": 0 
+        },
+        {
+            "name": "rockets",
+            "model": "rocketpod.json",
+            "projectile": "rocket.json"
+            "ammo": 40,
+            "damage": 10,
+            "splash": 10,
+            "range": 500,
+            "cooldown": 1,
+            "accuracy": 5 
+        },
+        {
+            "name": "bombs",
+            "model": "bombbay.json",
+            "projectile": "bomb.json"
+            "ammo": 20,
+            "damage": 50,
+            "splash": 30,
+            "range": 0,
+            "cooldown": 1,
+            "accuracy": 5 
+        },
+        {
+            "name": "mines",
+            "model": "minebelt.json",
+            "projectile": "mine.json"
+            "ammo": 5,
+            "damage": 100,
+            "splash": 10,
+            "range": 10,
+            "cooldown": 1,
+            "accuracy": 5 
+        },
+        {
+            "name": "missile",
+            "model": "missilepod.json",
+            "projectile": "missile.json"
+            "ammo": 5,
+            "damage": 50,
+            "splash": 10,
+            "range": 2000,
+            "cooldown": 1,
+            "accuracy": 0 
+        },
+        {
+            "name": "flamer",
+            "model": "flamer.json",
+            "ammo": 500,
+            "damage": 4,
+            "splash": 5,
+            "range": 300,
+            "cooldown": 0.1,
+            "accuracy": 10 
+        },
+        {
+            "name": "laser",
+            "model": "laser.json",
+            "ammo": 1000,
+            "damage": 1,
+            "range": 300,
+            "cooldown": 0.01,
+            "accuracy": 0 
+        }
+    ]
+}

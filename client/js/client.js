@@ -24,10 +24,16 @@ var Input = {
     UP: 38,
     RIGHT: 39,
     DOWN: 40,
+    KEYA: 65,
+    KEYW: 87,
+    KEYD: 68,
+    KEYS: 83,
+    PIPE: 0,
 
     keyUp: function(event) {
         event.preventDefault();
         Input.keys[event.keyCode] = false;
+        console.log(event.keyCode);
     },
 
     keyDown: function(event) {
@@ -44,31 +50,19 @@ var GameObject = function(scene) {
     this.controls = null;
 };
 
-GameObject.prototype.set = function(data) {
+GameObject.prototype.updateElement = function(element, data) {
     for(var setting in data) {
-        this[setting] = data[setting];
+        this[element][setting] = data[setting];
     }
 };
 
-GameObject.prototype.load = function(configurl) {
-    var self = this;
-    $.ajax({
-        dataType: "json",
-        url: configurl, 
-        success: function(data) {
-            self.set(data);
-        },
-        error: function(hr, status, error) {
-            console.log("Error loading", url, status, error);
-        },
-        complete: function() {
-            self.initialize(); 
-        }
-    });
+GameObject.prototype.setPlayer = function(player) {
+    this.player = player;
 };
 
-GameObject.prototype.generate = function() {
-    this.loadModel("data/ant.json");
+GameObject.prototype.setAvatar = function(avatar) {
+    this.avatar = avatar;
+    this.loadModel(this.avatar.model);
 };
 
 GameObject.prototype.loadModel = function(modelurl) {
@@ -98,12 +92,12 @@ var Eto = function() {
     this.CONFIG = ETO_CONFIG_DEFAULT;
     Input.master = this;
 
-    this.player = null;
+    this.player = [];
     this.camera = null;
     this.scene = null;
     this.renderer = null;
 
-    this.running = false;
+    this.isRunning = false;
 
     this.clock = new THREE.Clock();
 };
@@ -112,7 +106,7 @@ Eto.prototype.createCamera = function() {
     var camera = new THREE.PerspectiveCamera(this.CONFIG.camera_fov,
         window.innerWidth / window.innerHeight,
         this.CONFIG.camera_near, this.CONFIG.camera_far);
- 
+
     camera.position.set(10, 10, 20);
 
     return camera;
@@ -156,16 +150,16 @@ Eto.prototype.onWindowResize = function() {
 };
 
 Eto.prototype.start = function() {
-    running = true;
+    isRunning = true;
     this.animate();
 };
 
 Eto.prototype.stop = function() {
-    running = false;
+    isRunning = false;
 };
 
 Eto.prototype.animate = function() {
-    if(!running) {
+    if(!isRunning) {
         return;
     }
 
@@ -177,17 +171,30 @@ Eto.prototype.animate = function() {
 };
 
 Eto.prototype.readInput = function(delta) {
-    if(Input.keys[Input.UP]) {
-        this.player.graphics.position.x += .1; 
+    var controls = this.player[0].player.controls;
+    var graphics = this.player[0].graphics;
+
+    if(Input.keys[controls.up]) {
+        graphics.position.x += 0.1;
     }
-    if(Input.keys[Input.DOWN]) {
-        this.player.graphics.position.x -= .1; 
+    if(Input.keys[controls.down]) {
+        graphics.position.x -= 0.1;
     }
-    if(Input.keys[Input.LEFT]) {
-        this.player.graphics.rotation.y -= .1; 
+    if(Input.keys[controls.left]) {
+        graphics.rotation.y -= 0.1;
     }
-    if(Input.keys[Input.RIGHT]) {
-        this.player.graphics.rotation.y += .1; 
+    if(Input.keys[controls.right]) {
+        graphics.rotation.y += 0.1;
+    }
+
+    if(Input.keys[controls.primary]) {
+        graphics.material.color.setHex(0x00FF00);
+    }
+    else if(Input.keys[controls.secondary]) {
+        graphics.material.color.setHex(0x0000FF);
+    }
+    else {
+        graphics.material.color.setHex(0xFF0000);
     }
 };
 
@@ -203,7 +210,7 @@ var duration = 1000, keyframes = 20, currentKeyframe = 1,
     interpolation = duration / keyframes, lastKeyframe = 0;
 
     if(this.player.graphics) {
-        this.player.graphics.rotateY(-.01);
+        this.player.graphics.rotateY(-0.01);
         var mesh = this.player.graphics;
 
         var time = Date.now() % duration,
@@ -215,9 +222,9 @@ var duration = 1000, keyframes = 20, currentKeyframe = 1,
           lastKeyframe = currentKeyframe;
            currentKeyframe = keyframe;
         }
-        mesh.morphTargetInfluences[ keyframe ] = ( time % interpolation )
-                                                    / interpolation;
-        mesh.morphTargetInfluences[ lastKeyframe ] = 1 - 
+        mesh.morphTargetInfluences[ keyframe ] =
+            ( time % interpolation ) / interpolation;
+        mesh.morphTargetInfluences[ lastKeyframe ] = 1 -
                                   mesh.morphTargetInfluences[ keyframe ];
     }
     else {
@@ -229,26 +236,51 @@ var duration = 1000, keyframes = 20, currentKeyframe = 1,
     this.updateCamera();
 };
 
-Eto.prototype.loadConfiguration = function() {
-    var game = this;
+Eto.prototype.loadJSON = function(url, onSuccess, onComplete) {
+    var self = this;
     $.ajax({
         dataType: "json",
-        url: this.CONFIG.configuration_file,
-        success: function(data) {
-            for(var setting in data) {
-                this.CONFIG[setting] = data[setting];
-            }
-        },
+        success: onSuccess,
+        complete: onComplete,
         error: function(hr, status, error) {
-            alert("Error while loading configuration: " + status +
+            alert("Error while loading " + url + ": " + status +
                 " - " + error);
-        },
-        complete: function() {
-            console.log("config", game.CONFIG);
-            game.init();
         }
     });
 };
+
+Eto.prototype.loadConfiguration = function() {
+    var self = this;
+
+    this.loadJSON(this.CONFIG.configuration_file,
+        function(data) {
+            for(var setting in data) {
+                self.CONFIG[setting] = data[setting];
+            }
+        },
+        function() {
+            console.log("config", game.CONFIG);
+            self.init();
+        }
+    );
+};
+
+Eto.prototype.loadEntities = function(list) {
+    var self = this;
+
+    var pusher = function(data) {
+        for(var setting in data) {
+            this.entities.push(data[setting]);
+        }
+    };
+
+    for(var i = 0; i < list.length; ++i) {
+        this.loadJSON(list[i],
+            pusher.bind(self)
+        );
+    }
+};
+
 
 Eto.prototype.createConnections = function() {
 // Socket.io instead?
@@ -264,7 +296,7 @@ Eto.prototype.createConnections = function() {
 
 Eto.prototype.closeConnections = function() {
     this.connection.close();
-}
+};
 
 Eto.prototype.init = function() {
     var container = document.getElementById("container");
@@ -272,9 +304,15 @@ Eto.prototype.init = function() {
     this.camera = this.createCamera();
     this.scene = this.createScene();
 
-    this.player = new GameObject(this.scene);
-    this.player.generate();
-    this.connections = createConnections();
+    this.loadEntities(this.CONFIG.entities);
+    console.log(this.entities);
+    this.player[0] = new GameObject(this.scene);
+    this.player[0].setPlayer(this.CONFIG.players[0]);
+    this.player[0].setAvatar(this.entities[0]);
+    console.log(this.player[0]);
+
+    this.connections = this.createConnections();
+
     this.renderer = this.createRenderer();
 
     container.appendChild(renderer.domElement);
