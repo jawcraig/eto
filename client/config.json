@@ -1,11 +1,20 @@
 {
+    "datapath": "data/",
     "entities": [
-        "data/entities.json"
+        "entities.json"
+    ],
+    "maps": [
+        {
+            "name": "Hillside",
+            "model": "terrain.json",
+            "collision": "terraincollision.json"
+        }
     ],
     "animations": {
         "move": "move",
         "fire": "fire"
     },
+    "playercount": 2,
     "players": [
         {
             "name": "Doc",

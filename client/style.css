@@ -3,19 +3,56 @@ body {
     margin: 0px;
     position: fixed;
     overflow: hidden;
+
+    color: #AAA;
+    font-weight: bold;
+    font-family: sans-serif;
+    text-transform: uppercase;
 }
 
 #container {
     position: absolute;
     left: 0px;
     top: 0px;
+    z-index: 1;
+    opacity: 0.9;
 }
 
 #controls {
     position: absolute;
     width: 800px;
-    left: 0px;
+    left: 800px;
     top: 0px;
     z-index: 2;
     float: right;
+}
+
+#score {
+    background-color: rgba(3, 3, 3, 120);
+    position: absolute;
+    width: 65px;
+    left: 0px;
+    z-index: 2;
+    border: 0px solid;
+    border-radius: 3px;
+    padding: 3px;
+}
+
+#score #player1{
+    color: #F00;
+    margin-bottom: 5px;
+}
+#score #player2{
+    color: #0F0;
+    margin-bottom: 5px;
+}
+#score #player3{
+    color: #00F;
+    margin-bottom: 5px;
+    display: none;
+}
+#score #player4{
+    color: #616;
+    margin-bottom: 5px;
+    display: none;
 }
