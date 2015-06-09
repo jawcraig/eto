@@ -7,7 +7,10 @@
         {
             "name": "Hillside",
             "model": "terrain.json",
-            "collision": "terraincollision.json"
+            "collision": "terraincollision.json",
+            "scale": {"x": 170, "y": 60, "z": 170},
+            "position": {"x": 0, "y": -60, "z": 0},
+            "rotation": {"x": 0, "y": -60, "z": 0}
         }
     ],
     "animations": {

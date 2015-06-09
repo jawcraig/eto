@@ -18,7 +18,7 @@
         },
 
         {
-            "name": "spider", "type": "walker", "model": "spider.json",
+            "name": "arachnid", "type": "walker", "model": "arachnid.json",
             "move": 2, "turn": 1, "health": 30,
             "items": [{"name":"missiles"}, {"name":"melee"}]
         },

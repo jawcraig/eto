@@ -4,14 +4,21 @@ var ETO_CONFIG_DEFAULT = {
     configuration_file: "config.json",
     basepath: "",
     datapath: "data/",
+
     camera_fov: 75,
     camera_near: 1,
     camera_far: 1000,
     camera_position: {x: 20, y: 50, z: 20},
     camera_up: {x: 0, y: 1, z: 0},
     camera_lookat: {x: 0, y: 0, z: 0},
+
     sky_size: 300,
-    sky_color: 0x707090
+    sky_color: 0x707090,
+
+    walk_speed: 0.1,
+    walk_turn_speed: 0.1,
+    fly_speed: 0.1,
+    fly_turn_speed: 0.1
 };
 
 var Input = {
@@ -48,7 +55,12 @@ var Input = {
 
 var GameObject = function(parent) {
     this.parent = parent;
+
+    var material = new THREE.MeshBasicMaterial({color: 0xB0C0D0});
+    var geometry = new THREE.BoxGeometry(0.2, 10, 0.2);
+    this.feet = new THREE.Mesh(geometry, material);
 };
+GameObject.ray = new THREE.Raycaster();
 
 GameObject.prototype.setPlayer = function(player) {
     this.player = player;
@@ -65,26 +77,26 @@ GameObject.prototype.setItem = function(item) {
 };
 
 GameObject.prototype.setModel = function(model) {
-    if(typeof this.avatar === undefined) {
+    if(typeof this.avatar === "undefined") {
         this.avatar = {};
     }
 
-    if(typeof model !== undefined) {
+    if(typeof model !== "undefined") {
         this.avatar.model = model;
     }
 };
 
 GameObject.prototype.loadData = function(path, animated) {
-    if(typeof this.graphics === undefined || !this.graphics) {
+    if(typeof this.graphics === "undefined" || !this.graphics) {
         this.graphics = this.getPlaceHolder();
         this.parent.add(this.graphics);
     }
 
-    if(typeof this.avatar === undefined || this.avatar === null) {
+    if(typeof this.avatar === "undefined" || this.avatar === null) {
         return;
     }
 
-    if(typeof this.avatar.model !== undefined && this.avatar.model) {
+    if(typeof this.avatar.model !== "undefined" && this.avatar.model) {
         if(animated) {
             console.log("loadAnimated:", this, this.avatar.name);
             this.loadAnimatedModel(path + this.avatar.model);
@@ -99,8 +111,9 @@ GameObject.prototype.loadData = function(path, animated) {
 GameObject.prototype.getPlaceHolder = function() {
     var emptyGeometry = new THREE.BoxGeometry(3, 3, 3, 2, 2, 2);
     var emptyMaterial = new THREE.MeshBasicMaterial({color:0x0000FF});
-    return new THREE.SkinnedMesh(emptyGeometry,
-        emptyMaterial, false);
+    var mesh = new THREE.SkinnedMesh(emptyGeometry, emptyMaterial, false);
+    mesh.down = new THREE.Vector3();
+    return mesh;
 };
 
 GameObject.prototype.loadModel = function(modelurl) {
@@ -118,15 +131,13 @@ GameObject.prototype.loadModel = function(modelurl) {
                 shading: THREE.FlatShading
             });
             var mesh = new THREE.Mesh(geometry, material);
-            mesh.scale.set(100, 50, 100);
-            mesh.translateY(-60);
 
-            if(self.graphics !== undefined && self.graphics) {
+            if(typeof self.graphics !== "undefined" && self.graphics !== null) {
                 self.parent.remove(self.graphics);
             }
 
             self.graphics = mesh;
-            self.parent.add(mesh);
+            self.finalizeGraphics();
         }
     );
 };
@@ -148,16 +159,37 @@ GameObject.prototype.loadAnimatedModel = function(modelurl) {
             var mesh = new THREE.SkinnedMesh(geometry, material, false);
             mesh.pose();
 
-            if(self.graphics !== undefined && self.graphics) {
+            if(typeof self.graphics !== "undefined" && self.graphics !== null) {
                 self.parent.remove(self.graphics);
             }
 
             self.graphics = mesh;
-            self.parent.add(mesh);
+            self.finalizeGraphics();
+
             var animation = new THREE.Animation(mesh, geometry.animations[0]);
             animation.play(0);
         }
     );
+};
+
+GameObject.prototype.finalizeGraphics = function() {
+    var mesh = this.graphics;
+    var props = this.avatar;
+
+    if(typeof props.scale !== "undefined" && props.scale !== null) {
+        mesh.scale.set(props.scale.x, props.scale.y, props.scale.z);
+    }
+    if(typeof props.rotation !== "undefined" && props.rotation !== null) {
+        mesh.rotation.set(props.rotation.x, props.rotation.y, props.rotation.z);
+    }
+    if(typeof props.position !== "undefined" && props.position !== null) {
+        mesh.position.set(props.position.x, props.position.y, props.position.z);
+    }
+
+    this.parent.add(mesh);
+
+    this.graphics.down = new THREE.Vector3();
+    this.parent.add(this.feet);
 };
 
 GameObject.prototype.handleInput = function() {
@@ -167,7 +199,7 @@ GameObject.prototype.handleInput = function() {
 
     var graphics = this.graphics;
 
-    if(typeof graphics === undefined || !graphics) {
+    if(typeof graphics === "undefined" || !graphics) {
         return;
     }
 
@@ -191,9 +223,17 @@ GameObject.prototype.handleActions = function() {
     var graphics = this.graphics;
 
     if(Input.keys[controls.primary]) {
+        if(this.items.length > 0) {
+            console.log("Firing: " + this.items[0].item.name);
+        }
+
         graphics.material.color.setHex(0x00FF00);
     }
     else if(Input.keys[controls.secondary]) {
+        if(this.items.length > 1) {
+            console.log("Firing: " + this.items[1].item.name);
+        }
+
         graphics.material.color.setHex(0x0000FF);
     }
     else {
@@ -206,22 +246,22 @@ GameObject.prototype.handleFly = function() {
     var graphics = this.graphics;
     var avatar = this.avatar;
 
-    var xdelta = Math.sin(graphics.rotation.y);
-    var ydelta = Math.cos(graphics.rotation.y);
-    graphics.position.x += 0.1 * avatar.move * xdelta;
-    graphics.position.z += 0.1 * avatar.move * ydelta;
+    var xdelta = -Math.sin(graphics.rotation.y);
+    var ydelta = -Math.cos(graphics.rotation.y);
+    graphics.position.x += game.CONFIG.fly_speed * avatar.move * xdelta;
+    graphics.position.z += game.CONFIG.fly_speed * avatar.move * ydelta;
 
     if(Input.keys[controls.up]) {
-        graphics.position.y += 0.1 * avatar.move;
+        graphics.position.y += game.CONFIG.fly_speed * avatar.move;
     }
     if(Input.keys[controls.down]) {
-        graphics.position.y -= 0.1 * avatar.move;
+        graphics.position.y -= game.CONFIG.fly_speed * avatar.move;
     }
     if(Input.keys[controls.left]) {
-        graphics.rotation.y += 0.03 * avatar.turn;
+        graphics.rotation.y += game.CONFIG.fly_turn_speed * avatar.turn;
     }
     if(Input.keys[controls.right]) {
-        graphics.rotation.y -= 0.03 * avatar.turn;
+        graphics.rotation.y -= game.CONFIG.fly_turn_speed * avatar.turn;
     }
 };
 
@@ -230,24 +270,48 @@ GameObject.prototype.handleWalk = function() {
     var graphics = this.graphics;
     var avatar = this.avatar;
 
-    var xdelta = Math.sin(graphics.rotation.y);
-    var ydelta = Math.cos(graphics.rotation.y);
+    var xdelta = -Math.sin(graphics.rotation.y);
+    var ydelta = -Math.cos(graphics.rotation.y);
 
     if(Input.keys[controls.up]) {
-        graphics.position.x -= 0.1 * avatar.move * xdelta;
-        graphics.position.z -= 0.1 * avatar.move * ydelta;
+        graphics.position.x += game.CONFIG.walk_speed * avatar.move * xdelta;
+        graphics.position.z += game.CONFIG.walk_speed * avatar.move * ydelta;
     }
     if(Input.keys[controls.down]) {
-        graphics.position.x += 0.1 * avatar.move * xdelta;
-        graphics.position.z += 0.1 * avatar.move * ydelta;
+        graphics.position.x -= game.CONFIG.walk_speed * avatar.move * xdelta;
+        graphics.position.z -= game.CONFIG.walk_speed * avatar.move * ydelta;
     }
     if(Input.keys[controls.left]) {
-        graphics.rotation.y += 0.01 * avatar.turn;
+        graphics.rotation.y += game.CONFIG.walk_turn_speed * avatar.turn;
     }
     if(Input.keys[controls.right]) {
-        graphics.rotation.y -= 0.01 * avatar.turn;
+        graphics.rotation.y -= game.CONFIG.walk_turn_speed * avatar.turn;
     }
 };
+
+GameObject.prototype.considerSurface = function(object) {
+    if(typeof object.collisionMesh === "undefined" ||
+            object.collisionMesh === null) {
+        console.log("No collision mesh on surface:", object);
+        return;
+    }
+
+    var surface = object.collisionMesh;
+    var ray = GameObject.ray;
+    this.graphics.down.copy(this.graphics.up).negate();
+    ray.set(this.graphics.position, this.graphics.down);
+
+    this.feet.position.copy(this.graphics.position);
+
+    var intersects = ray.intersectObject(surface);
+    if(intersects.length > 0) {
+        this.feet.position.copy(intersects[0].point);
+        this.feet.lookAt(this.graphics.down);
+    }
+
+    // TODO: Place at surface
+};
+
 
 var Eto = function() {
     this.CONFIG = ETO_CONFIG_DEFAULT;
@@ -322,7 +386,7 @@ Eto.prototype.generateField = function(map) {
     field.graphics.rotateX(-Math.PI/2);
     field.graphics.translateY(-1);
 
-    field.collision = field.graphics;
+    field.collisionMesh = field.graphics;
     return field;
 };
 
@@ -331,7 +395,8 @@ Eto.prototype.loadField = function(scene, map) {
     console.log("Loading map: ", map);
     field.setAvatar(map);
     field.loadData(this.dataPath(""), false);
-    field.collision = field.graphics;
+
+    field.collisionMesh = field.graphics;
     return field;
 };
 
@@ -370,9 +435,15 @@ Eto.prototype.animate = function() {
     renderer.render(this.scene, this.camera);
 };
 
-Eto.prototype.readInput = function(delta) {
+Eto.prototype.handleInput = function(delta) {
     for(var i = 0; i < this.players.length; ++i) {
         this.players[i].handleInput();
+    }
+};
+
+Eto.prototype.handlePhysics = function(delta) {
+    for(var i = 0; i < this.players.length; ++i) {
+        this.players[i].considerSurface(this.field);
     }
 };
 
@@ -406,14 +477,15 @@ Eto.prototype.update = function() {
     THREE.AnimationHandler.update(delta);
 
 /*    var graphics = this.players[0].graphics;
-    if(typeof graphics !== undefined && graphics) {
-        if(typeof graphics.morphTargetInfluences != undefined) {
+    if(typeof graphics !== "undefined" && graphics) {
+        if(typeof graphics.morphTargetInfluences !== "undefined") {
             this.animateModel(graphics, delta);
         }
     }
 */
 
-    this.readInput(delta);
+    this.handleInput(delta);
+    this.handlePhysics(delta);
 
     this.updateCamera();
 };
@@ -494,11 +566,11 @@ Eto.prototype.createPlayer = function(index) {
 Eto.prototype.loadItems = function(player) {
     player.items = [];
     for(var i = 0; i < player.avatar.items.length; ++i) {
-        var item = new GameObject(player.graphics);
+        var item = new GameObject(this.scene);
         item.setAvatar(player.avatar.items[i]);
-        console.log(item);
         item.setItem(this.items[item.avatar.name]);
         item.loadData(this.dataPath(""), false);
+        player.items.push(item);
     }
 };
 
