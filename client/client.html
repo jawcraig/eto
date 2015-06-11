@@ -12,6 +12,64 @@
     <body>
         <div id="container"></div>
 
+        <div id="settings" class="hidden">
+            <div class="tabs">
+                <div class="tab">
+                    <input type="radio" id="tab1" name="tabgroup1" checked>
+                    <label class="tablabel" for="tab1">
+                        <span class="nonselectable">Game</span>
+                    </label>
+
+                    <div class="content">
+                        <p>
+                        <label for="playerbalance">Player balance</label>
+                        P1<input id="playerbalance" type="range"
+                            min="0" max="100" value="50">P2
+                        </p>
+                        <p>
+                        <button type="button" id="newround">
+                            New round
+                        </button>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="tab">
+                    <input type="radio" id="tab2" name="tabgroup1">
+                    <label class="tablabel" for="tab2">
+                        <span class="nonselectable">Audio</span>
+                    </label>
+
+                    <div class="content">
+                        <p>
+                        <label for="mastergain">Master volume</label>
+                        <input id="mastergain" type="range"
+                            min="0" max="100" value="100">
+                        </p>
+                        <p>
+                        <input id="audio3d" type="checkbox" checked>
+                        <label for="audio3d">Use positional audio</label>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="tab">
+                    <input type="radio" id="tab3" name="tabgroup1">
+                    <label class="tablabel" for="tab3">
+                        <span class="nonselectable">Misc</span>
+                    </label>
+
+                    <div class="content">
+                        <ul>
+                            <li>
+                        <p>Misc sutfjk</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="score">
             <div id="player1">
                 P1:

@@ -15,7 +15,7 @@ body {
     left: 0px;
     top: 0px;
     z-index: 1;
-    opacity: 0.9;
+    opacity: 1;
 }
 
 #controls {
@@ -27,11 +27,81 @@ body {
     float: right;
 }
 
+#settings {
+    position: absolute;
+    left: 400px;
+    top: 200px;
+}
+
+.hidden {
+    display: none;
+}
+
+.tabs {
+    position: relative;
+    min-height: 400px;
+    min-width: 500px;
+    clear: both;
+    z-index: 3;
+}
+
+.tab {
+    float: left;
+}
+
+.tab label.tablabel {
+    background: #000;
+    padding: 10px;
+    border: 0px;
+    border-radius: 3px;
+    margin-left: -1px;
+    position: relative;
+    left: 1px;
+    user-select: none;
+}
+
+.tab [type=radio] {
+    display: none;
+}
+
+.nonselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.content {
+    position: absolute;
+    top: 28px;
+    left: 0px;
+    background: #;
+    right: 0;
+    bottom: 0;
+    padding: 20px;
+    border: 0px;
+    border-radius: 3px;
+    background: #222;
+}
+
+[type=radio]:checked ~ label {
+    background: #222;
+    border-bottom: 2px solid #222;
+    z-index: 3;
+}
+
+[type=radio]:checked ~label ~ .content {
+    z-index: 2;
+}
+
 #score {
     background-color: rgba(3, 3, 3, 120);
     position: absolute;
-    width: 65px;
-    left: 0px;
+    width: 62px;
+    left: 10px;
+    top: 10px;
     z-index: 2;
     border: 0px solid;
     border-radius: 3px;

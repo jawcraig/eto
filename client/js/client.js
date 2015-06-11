@@ -7,6 +7,10 @@ var ETO_CONFIG_DEFAULT = {
     basepath: "",
     datapath: "data/",
 
+
+    menu_key: 27,
+
+
     camera_fov: 75,
     camera_near: 1,
     camera_far: 1000,
@@ -57,6 +61,11 @@ var Input = {
 
     keyUp: function(event) {
         event.preventDefault();
+
+        if(event.keyCode == game.config.menu_key) {
+            game.toggleMenu();
+        }
+
         Input.keys[event.keyCode] = false;
     },
 
@@ -128,6 +137,8 @@ Audio.prototype.updatePannerPosition = function(panner, object) {
     GameObject.vector.setFromMatrixPosition(object.graphics.matrixWorld);
     panner.setPosition(GameObject.vector.x, GameObject.vector.y,
         GameObject.vector.z);
+    // TODO: Doppler, listener direction:
+// http://www.html5rocks.com/en/tutorials/webaudio/positional_audio/http://www.html5rocks.com/en/tutorials/webaudio/positional_audio/
 };
 
 Audio.prototype.updateListenerPosition = function(camera) {
@@ -836,6 +847,11 @@ Eto.prototype.createAudio = function() {
     return new Audio();
 };
 
+Eto.prototype.toggleMenu = function() {
+    $("#settings").toggleClass("hidden");
+//TODO: isPaused, pause(), continue()
+};
+
 Eto.prototype.init = function() {
 
     this.connections = this.createConnections();
@@ -854,7 +870,7 @@ Eto.prototype.init = function() {
     $(document).on("keyup", Input.keyUp);
 
     $("#controls").find("#disconnect").on("click",
-        function() { this.error("DISCO!"); });
+        function() { game.error("DISCO!"); });
 
     $(window).on("resize", this.onWindowResize.bind(this), false);
 
