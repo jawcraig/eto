@@ -10,7 +10,7 @@ var ETO_CONFIG_DEFAULT = {
     camera_fov: 75,
     camera_near: 1,
     camera_far: 1000,
-    camera_position: {x: 20, y: 50, z: 20},
+    camera_position: {x: 20, y: 70, z: 20},
     camera_up: {x: 0, y: 1, z: 0},
     camera_lookat: {x: 0, y: 0, z: 0},
 
@@ -18,6 +18,7 @@ var ETO_CONFIG_DEFAULT = {
     sky_color: 0x707090,
 
     gravity: {x: 0, y: -1, z: 0},
+    forward: {x: 1, y: 0, z: 0},
     feet_height: 100,
     walk_speed: 0.1,
     walk_turn_speed: 0.1,
@@ -65,6 +66,18 @@ var GameObject = function(parent) {
     var geometry = new THREE.BoxGeometry(0.2, 10, 0.2);
     this.feet = new THREE.Mesh(geometry, material);
 };
+
+// Global gravity vector - usually negative y
+GameObject.gravity = new THREE.Vector3(ETO_CONFIG_DEFAULT.gravity.x,
+    ETO_CONFIG_DEFAULT.gravity.y, ETO_CONFIG_DEFAULT.gravity.z);
+// Global forward vector - usually positive z
+GameObject.forward = new THREE.Vector3(ETO_CONFIG_DEFAULT.forward.x,
+    ETO_CONFIG_DEFAULT.forward.y, ETO_CONFIG_DEFAULT.forward.z);
+// Temporary matrix & vector for calculations
+GameObject.matrix = new THREE.Matrix4();
+GameObject.vector = new THREE.Vector3();
+// Ray caster
+GameObject.ray = new THREE.Raycaster();
 
 
 GameObject.prototype.setPlayer = function(player) {
@@ -296,6 +309,7 @@ GameObject.prototype.handleFly = function() {
 
     var xdelta = -Math.sin(graphics.rotation.y);
     var ydelta = -Math.cos(graphics.rotation.y);
+
     graphics.position.x += game.config.fly_speed * avatar.move * xdelta;
     graphics.position.z += game.config.fly_speed * avatar.move * ydelta;
 
@@ -352,11 +366,11 @@ GameObject.prototype.considerSurface = function(delta, terrain) {
     }
 */
 
-    Eto.vector.copy(this.graphics.position);
-    Eto.vector.y += game.config.feet_height;
-    Eto.ray.set(Eto.vector, Eto.gravity);
+    GameObject.vector.copy(this.graphics.position);
+    GameObject.vector.y += game.config.feet_height;
+    GameObject.ray.set(GameObject.vector, GameObject.gravity);
 
-    var intersects = Eto.ray.intersectObject(surface);
+    var intersects = GameObject.ray.intersectObject(surface);
     if(intersects.length > 0) {
         this.feet.position.copy(intersects[0].point);
         if(this.avatar.type == "walker") {
@@ -397,9 +411,8 @@ GameObject.prototype.animateModel = function(delta) {
 };
 
 GameObject.prototype.getForward = function() {
-    Eto.matrix.extractRotation(this.graphics.matrix);
-    Eto.vector.set(0, 0, 1);
-    return Eto.matrix.multiplyVector3(Eto.vector);
+    GameObject.matrix.extractRotation(this.graphics.matrix);
+    return GameObject.matrix.multiplyVector3(GameObject.forward);
 };
 
 
@@ -420,15 +433,6 @@ var Eto = function() {
     this.clock = new THREE.Clock();
     this.frameTime = this.clock.getElapsedTime();
 };
-
-// Global gravity vector for this game
-Eto.gravity = new THREE.Vector3(ETO_CONFIG_DEFAULT.gravity.x,
-    ETO_CONFIG_DEFAULT.gravity.y, ETO_CONFIG_DEFAULT.gravity.z);
-// Temporary matrix & vector for calculations
-Eto.matrix = new THREE.Matrix4();
-Eto.vector = new THREE.Vector3();
-// Ray caster
-Eto.ray = new THREE.Raycaster();
 
 Object.defineProperty(Eto.prototype, "time", {
     get: function() { return this.frameTime; }
@@ -705,6 +709,7 @@ Eto.prototype.init = function() {
     this.renderer = this.createRenderer();
     var container = document.getElementById("container");
     container.appendChild(this.renderer.domElement);
+
 
     $(document).on("keydown", Input.keyDown);
     $(document).on("keyup", Input.keyUp);
