@@ -17,6 +17,10 @@ var ETO_CONFIG_DEFAULT = {
     sky_size: 300,
     sky_color: 0x707090,
 
+
+    master_volume: 1.0,
+
+
     gravity: {x: 0, y: -1, z: 0},
     forward: {x: 1, y: 0, z: 0},
     feet_height: 100,
@@ -27,6 +31,10 @@ var ETO_CONFIG_DEFAULT = {
 
     item_cooldown: 1
 };
+
+
+/** Input system singleton **/
+
 
 var Input = {
     keys: [],
@@ -57,6 +65,103 @@ var Input = {
         Input.keys[event.keyCode] = true;
     }
 };
+
+
+/** Audio system **/
+
+
+var Audio = function() {
+    this.context = new AudioContext();
+
+    this.masterGain = this.context.createGain();
+    this.masterGain.connect(this.context.destination);
+    this.setVolume(game.config.master_volume);
+};
+
+Audio.prototype.getDestination = function() {
+    return this.masterGain;
+};
+
+// 0..1
+Audio.prototype.setVolume = function(volume) {
+    this.masterGain.gain.value = volume;
+};
+
+Audio.prototype.loadSound = function(url) {
+// TODO: Implement this using $.ajax (JQuery still buggy)
+
+    game.log("Loading audio:", url);
+
+    var request = new XMLHttpRequest();
+    request.open("GET", url, true);
+    request.responseType = "arraybuffer";
+
+    var sound = {
+        buffer: null
+    };
+
+    request.onload = function() {
+        this.audio.decodeAudioData(
+            request.response,
+
+            function(buffer) {
+                // Complete
+                sound.buffer = buffer;
+            },
+
+            function() {
+                // Error
+                game.error("Can't load " + url);
+            }
+        );
+    };
+
+    return sound;
+};
+
+Audio.prototype.createPanner = function() {
+    var panner = context.createPanner();
+    panner.connect(this.masterGain);
+};
+
+Audio.prototype.updatePannerPosition = function(panner, object) {
+    GameObject.vector.setFromMatrixPosition(object.graphics.matrixWorld);
+    panner.setPosition(GameObject.vector.x, GameObject.vector.y,
+        GameObject.vector.z);
+};
+
+Audio.prototype.updateListenerPosition = function(camera) {
+    camera.position.set(x, y, z);
+    camera.updateMatrixWorld();
+    GameObject.vector.setFromMatrixPosition(camera.matrixWorld);
+    this.context.listener.setPosition(GameObject.vector.x,
+        GameObject.vector.y, GameObject.vector.z);
+};
+
+Audio.prototype.playSound = function(source, buffer, destination, time) {
+    if(typeof buffer === "undefined" || !buffer) {
+        game.error("Audio: trying to play empty buffer");
+        return;
+    }
+
+    if(typeof source === "undefined" || !source) {
+        game.log("Audio: Empty source given, creating a new one");
+        source = this.context.createBufferSource();
+    }
+
+    source.buffer = buffer;
+    source.connect(this.getDestination());
+
+    if(typeof time !== "undefined") {
+        source.start(time);
+    }
+    else {
+        source.start(0);
+    }
+};
+
+
+/** Game Object **/
 
 
 var GameObject = function(parent) {
@@ -104,6 +209,10 @@ GameObject.prototype.setModel = function(model) {
         this.avatar.model = model;
     }
 };
+
+
+/** GRAPHICS system **/
+
 
 GameObject.prototype.loadData = function(path, animated) {
     if(typeof this.graphics === "undefined" || !this.graphics) {
@@ -213,6 +322,10 @@ GameObject.prototype.finalizeGraphics = function(mesh) {
         this.parent.add(this.feet);
     }
 };
+
+
+/** AI system **/
+
 
 GameObject.prototype.updateInput = function(delta) {
     if(this.player.connection != "local") {
@@ -351,6 +464,10 @@ GameObject.prototype.handleWalk = function() {
     }
 };
 
+
+/** Physics system **/
+
+
 GameObject.prototype.updatePhysics = function(delta, terrain) {
     this.considerSurface(delta, terrain);
 };
@@ -378,6 +495,10 @@ GameObject.prototype.considerSurface = function(delta, terrain) {
         }
     }
 };
+
+
+/** Animation system **/
+
 
 GameObject.prototype.updateAnimation = function(delta) {
     var graphics = this.graphics;
@@ -414,6 +535,14 @@ GameObject.prototype.getForward = function() {
     GameObject.matrix.extractRotation(this.graphics.matrix);
     return GameObject.matrix.multiplyVector3(GameObject.forward);
 };
+
+
+/** Sound system **/
+
+
+
+
+
 
 
 var Eto = function() {
@@ -579,6 +708,7 @@ Eto.prototype.updatePhysics = function(delta) {
 };
 
 Eto.prototype.updateCamera = function(delta) {
+// Zoom camera to contain all objects
 //    this.camera.lookAt(this.cameraTarget);
 };
 
@@ -685,8 +815,11 @@ Eto.prototype.log = ETO_CONFIG_DEFAULT.DEBUG ?
 
 Eto.prototype.error = function(message) {
     this.log(message);
-    this.log((new Error()).stack);
-    alert(message);
+    this.log("*** Stack trace: ", (new Error()).stack);
+
+    if(this.config.DEBUG) {
+        alert(message);
+    }
 };
 
 
@@ -699,9 +832,15 @@ Eto.prototype.entitiesLoaded = function() {
     this.start();
 };
 
+Eto.prototype.createAudio = function() {
+    return new Audio();
+};
+
 Eto.prototype.init = function() {
 
     this.connections = this.createConnections();
+
+    this.audio = this.createAudio();
 
     this.camera = this.createCamera();
     this.scene = this.createScene();
