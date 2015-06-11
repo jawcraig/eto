@@ -571,7 +571,7 @@ var Eto = function() {
     this.isRunning = false;
 
     this.clock = new THREE.Clock();
-    this.frameTime = this.clock.getElapsedTime();
+    this.frameTime = 0;
 };
 
 Object.defineProperty(Eto.prototype, "time", {
@@ -668,13 +668,28 @@ Eto.prototype.onWindowResize = function() {
 
 Eto.prototype.start = function() {
     this.isRunning = true;
+    this.isPaused = false;
     this.clock.start();
     this.animate();
 };
 
 Eto.prototype.stop = function() {
     this.isRunning = false;
+    this.isPaused = true;
+    this.clock.stop();
 };
+
+Eto.prototype.togglePause = function() {
+// TODO: This really fracks up the animation delta calculation
+    if(!this.isPaused) {
+        this.isPaused = true;
+        this.clock.stop();
+    }
+    else {
+        this.isPaused = false;
+        this.clock.start();
+    }
+}
 
 Eto.prototype.animate = function() {
     if(!this.isRunning) {
@@ -690,7 +705,12 @@ Eto.prototype.animate = function() {
 
 Eto.prototype.update = function() {
     var delta = this.clock.getDelta();
-    this.frameTime = this.clock.getElapsedTime();
+
+    if(this.isPaused) {
+        return;
+    }
+
+    this.frameTime += delta;
 
     THREE.AnimationHandler.update(delta);
 
@@ -849,7 +869,8 @@ Eto.prototype.createAudio = function() {
 
 Eto.prototype.toggleMenu = function() {
     $("#settings").toggleClass("hidden");
-//TODO: isPaused, pause(), continue()
+
+    this.togglePause();
 };
 
 Eto.prototype.init = function() {

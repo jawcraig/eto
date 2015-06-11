@@ -99,7 +99,7 @@ body {
 #score {
     background-color: rgba(3, 3, 3, 120);
     position: absolute;
-    width: 62px;
+    width: 80px;
     left: 10px;
     top: 10px;
     z-index: 2;
@@ -111,18 +111,22 @@ body {
 #score #player1{
     color: #F00;
     margin-bottom: 5px;
+    white-space: nowrap;
 }
 #score #player2{
     color: #0F0;
     margin-bottom: 5px;
+    white-space: nowrap;
 }
 #score #player3{
     color: #00F;
     margin-bottom: 5px;
     display: none;
+    white-space: nowrap;
 }
 #score #player4{
     color: #616;
     margin-bottom: 5px;
     display: none;
+    white-space: nowrap;
 }
