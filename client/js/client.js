@@ -1,6 +1,8 @@
 // Author: jawcraig (jawcraig@gmail.com)
 
 var ETO_CONFIG_DEFAULT = {
+    DEBUG: true,
+
     configuration_file: "config.json",
     basepath: "",
     datapath: "data/",
@@ -15,15 +17,18 @@ var ETO_CONFIG_DEFAULT = {
     sky_size: 300,
     sky_color: 0x707090,
 
+    gravity: {x: 0, y: -1, z: 0},
+    feet_height: 100,
     walk_speed: 0.1,
     walk_turn_speed: 0.1,
     fly_speed: 0.1,
-    fly_turn_speed: 0.1
+    fly_turn_speed: 0.1,
+
+    item_cooldown: 1
 };
 
 var Input = {
     keys: [],
-    master: null,
 
     TAB: 9,
     SHIFT: 16,
@@ -60,7 +65,7 @@ var GameObject = function(parent) {
     var geometry = new THREE.BoxGeometry(0.2, 10, 0.2);
     this.feet = new THREE.Mesh(geometry, material);
 };
-GameObject.ray = new THREE.Raycaster();
+
 
 GameObject.prototype.setPlayer = function(player) {
     this.player = player;
@@ -72,6 +77,7 @@ GameObject.prototype.setAvatar = function(avatar) {
 
 GameObject.prototype.setItem = function(item) {
     this.item = item;
+    this.item.lastFired = 0;
 
     this.setModel(this.item.model);
 };
@@ -98,11 +104,11 @@ GameObject.prototype.loadData = function(path, animated) {
 
     if(typeof this.avatar.model !== "undefined" && this.avatar.model) {
         if(animated) {
-            console.log("loadAnimated:", this, this.avatar.name);
+            game.log("loadAnimated:", this, this.avatar.name);
             this.loadAnimatedModel(path + this.avatar.model);
         }
         else {
-            console.log("loadModel:", this, this.avatar.name);
+            game.log("loadModel:", this, this.avatar.name);
             this.loadModel(path + this.avatar.model);
         }
     }
@@ -112,14 +118,13 @@ GameObject.prototype.getPlaceHolder = function() {
     var emptyGeometry = new THREE.BoxGeometry(3, 3, 3, 2, 2, 2);
     var emptyMaterial = new THREE.MeshBasicMaterial({color:0x0000FF});
     var mesh = new THREE.SkinnedMesh(emptyGeometry, emptyMaterial, false);
-    mesh.down = new THREE.Vector3();
     return mesh;
 };
 
 GameObject.prototype.loadModel = function(modelurl) {
     var self = this;
 
-    console.log("Loading model " + modelurl);
+    game.log("Loading model " + modelurl);
     var loader = new THREE.JSONLoader();
     loader.load(modelurl,
         function(geometry, materials) {
@@ -136,8 +141,7 @@ GameObject.prototype.loadModel = function(modelurl) {
                 self.parent.remove(self.graphics);
             }
 
-            self.graphics = mesh;
-            self.finalizeGraphics();
+            self.finalizeGraphics(mesh);
         }
     );
 };
@@ -145,7 +149,7 @@ GameObject.prototype.loadModel = function(modelurl) {
 GameObject.prototype.loadAnimatedModel = function(modelurl) {
     var self = this;
 
-    console.log("Loading skinned model " + modelurl);
+    game.log("Loading skinned model " + modelurl);
     var loader = new THREE.JSONLoader();
     loader.load(modelurl,
         function(geometry, materials) {
@@ -163,17 +167,21 @@ GameObject.prototype.loadAnimatedModel = function(modelurl) {
                 self.parent.remove(self.graphics);
             }
 
-            self.graphics = mesh;
-            self.finalizeGraphics();
+            self.finalizeGraphics(mesh);
 
-            var animation = new THREE.Animation(mesh, geometry.animations[0]);
-            animation.play(0);
+            if(typeof geometry.animations !== "undefined" &&
+                    geometry.animations.length > 0) {
+                var animation = new THREE.Animation(mesh,
+                    geometry.animations[0]);
+                animation.play(0);
+            }
         }
     );
 };
 
-GameObject.prototype.finalizeGraphics = function() {
-    var mesh = this.graphics;
+GameObject.prototype.finalizeGraphics = function(mesh) {
+    this.graphics = mesh;
+
     var props = this.avatar;
 
     if(typeof props.scale !== "undefined" && props.scale !== null) {
@@ -188,11 +196,12 @@ GameObject.prototype.finalizeGraphics = function() {
 
     this.parent.add(mesh);
 
-    this.graphics.down = new THREE.Vector3();
-    this.parent.add(this.feet);
+    if(typeof this.avatar.type !== "undefined" && this.avatar.type == "flyer") {
+        this.parent.add(this.feet);
+    }
 };
 
-GameObject.prototype.handleInput = function() {
+GameObject.prototype.updateInput = function(delta) {
     if(this.player.connection != "local") {
         return;
     }
@@ -212,7 +221,7 @@ GameObject.prototype.handleInput = function() {
         this.handleFly();
     }
     else {
-        console.log("Unknown avatar type: ", avatar.type);
+        game.log("Unknown avatar type: ", avatar.type);
     }
 
     this.handleActions();
@@ -224,14 +233,14 @@ GameObject.prototype.handleActions = function() {
 
     if(Input.keys[controls.primary]) {
         if(this.items.length > 0) {
-            console.log("Firing: " + this.items[0].item.name);
+            this.fire(this.items[0]);
         }
 
         graphics.material.color.setHex(0x00FF00);
     }
     else if(Input.keys[controls.secondary]) {
         if(this.items.length > 1) {
-            console.log("Firing: " + this.items[1].item.name);
+            this.fire(this.items[1]);
         }
 
         graphics.material.color.setHex(0x0000FF);
@@ -241,6 +250,45 @@ GameObject.prototype.handleActions = function() {
     }
 };
 
+GameObject.prototype.fire = function(slot) {
+    var item = slot.item;
+
+    if(game.time - item.lastFired >
+            game.config.item_cooldown * item.cooldown) {
+
+        item.lastFired = game.time;
+
+        switch(item.type) {
+            case "gun":
+                this.fireGun(slot);
+                break;
+            case "projectile":
+                this.fireProjectile(slot);
+                break;
+            case "special":
+                this.fireSpecial(slot);
+                break;
+            case "particle":
+                this.fireFlamer(slot);
+                break;
+            default:
+                game.error("Not implemented " + item.type);
+        }
+    }
+};
+
+GameObject.prototype.fireGun = function(slot) {
+   game.log("Firing: ", slot.item.name);
+};
+
+GameObject.prototype.fireProjectile = function(slot) {
+   game.log("Firing: ", slot.item.name);
+};
+
+GameObject.prototype.fireSpecial = function(slot) {
+   game.log("Firing: ", slot.item.name);
+};
+
 GameObject.prototype.handleFly = function() {
     var controls = this.player.controls;
     var graphics = this.graphics;
@@ -248,20 +296,20 @@ GameObject.prototype.handleFly = function() {
 
     var xdelta = -Math.sin(graphics.rotation.y);
     var ydelta = -Math.cos(graphics.rotation.y);
-    graphics.position.x += game.CONFIG.fly_speed * avatar.move * xdelta;
-    graphics.position.z += game.CONFIG.fly_speed * avatar.move * ydelta;
+    graphics.position.x += game.config.fly_speed * avatar.move * xdelta;
+    graphics.position.z += game.config.fly_speed * avatar.move * ydelta;
 
     if(Input.keys[controls.up]) {
-        graphics.position.y += game.CONFIG.fly_speed * avatar.move;
+        graphics.position.y += game.config.fly_speed * avatar.move;
     }
     if(Input.keys[controls.down]) {
-        graphics.position.y -= game.CONFIG.fly_speed * avatar.move;
+        graphics.position.y -= game.config.fly_speed * avatar.move;
     }
     if(Input.keys[controls.left]) {
-        graphics.rotation.y += game.CONFIG.fly_turn_speed * avatar.turn;
+        graphics.rotation.y += game.config.fly_turn_speed * avatar.turn;
     }
     if(Input.keys[controls.right]) {
-        graphics.rotation.y -= game.CONFIG.fly_turn_speed * avatar.turn;
+        graphics.rotation.y -= game.config.fly_turn_speed * avatar.turn;
     }
 };
 
@@ -274,53 +322,95 @@ GameObject.prototype.handleWalk = function() {
     var ydelta = -Math.cos(graphics.rotation.y);
 
     if(Input.keys[controls.up]) {
-        graphics.position.x += game.CONFIG.walk_speed * avatar.move * xdelta;
-        graphics.position.z += game.CONFIG.walk_speed * avatar.move * ydelta;
+        graphics.position.x += game.config.walk_speed * avatar.move * xdelta;
+        graphics.position.z += game.config.walk_speed * avatar.move * ydelta;
     }
     if(Input.keys[controls.down]) {
-        graphics.position.x -= game.CONFIG.walk_speed * avatar.move * xdelta;
-        graphics.position.z -= game.CONFIG.walk_speed * avatar.move * ydelta;
+        graphics.position.x -= game.config.walk_speed * avatar.move * xdelta;
+        graphics.position.z -= game.config.walk_speed * avatar.move * ydelta;
     }
     if(Input.keys[controls.left]) {
-        graphics.rotation.y += game.CONFIG.walk_turn_speed * avatar.turn;
+        graphics.rotation.y += game.config.walk_turn_speed * avatar.turn;
     }
     if(Input.keys[controls.right]) {
-        graphics.rotation.y -= game.CONFIG.walk_turn_speed * avatar.turn;
+        graphics.rotation.y -= game.config.walk_turn_speed * avatar.turn;
     }
 };
 
-GameObject.prototype.considerSurface = function(object) {
-    if(typeof object.collisionMesh === "undefined" ||
-            object.collisionMesh === null) {
-        console.log("No collision mesh on surface:", object);
-        return;
+GameObject.prototype.updatePhysics = function(delta, terrain) {
+    this.considerSurface(delta, terrain);
+};
+
+GameObject.prototype.considerSurface = function(delta, terrain) {
+    var surface = terrain.graphics;
+/* TODO: Separate collision mesh loading
+    var surface = terrain.collisionMesh;
+
+    if(typeof surface === "undefined" || surface === null) {
+        game.log("No collision mesh on surface:", terrain);
+        surface = terrain.graphics;
     }
+*/
 
-    var surface = object.collisionMesh;
-    var ray = GameObject.ray;
-    this.graphics.down.copy(this.graphics.up).negate();
-    ray.set(this.graphics.position, this.graphics.down);
+    Eto.vector.copy(this.graphics.position);
+    Eto.vector.y += game.config.feet_height;
+    Eto.ray.set(Eto.vector, Eto.gravity);
 
-    this.feet.position.copy(this.graphics.position);
-
-    var intersects = ray.intersectObject(surface);
+    var intersects = Eto.ray.intersectObject(surface);
     if(intersects.length > 0) {
         this.feet.position.copy(intersects[0].point);
-        this.feet.lookAt(this.graphics.down);
+        if(this.avatar.type == "walker") {
+            this.graphics.position.copy(intersects[0].point);
+        }
+    }
+};
+
+GameObject.prototype.updateAnimation = function(delta) {
+    var graphics = this.graphics;
+    if(typeof graphics !== "undefined" && graphics) {
+        if(typeof graphics.morphTargetInfluences !== "undefined") {
+            this.animateModel(graphics, delta);
+        }
+    }
+};
+
+GameObject.prototype.animateModel = function(delta) {
+    var mesh = this.graphics;
+
+    var duration = 1000, keyframes = 20, currentKeyframe = 1,
+        interpolation = duration / keyframes, lastKeyframe = 0,
+        time = Date.now() % duration,
+        keyframe = Math.floor( time / interpolation );
+
+    if (keyframe != currentKeyframe) {
+      mesh.morphTargetInfluences[ lastKeyframe ] = 0;
+      mesh.morphTargetInfluences[ currentKeyframe ] = 1;
+      mesh.morphTargetInfluences[ keyframe ] = 0;
+      lastKeyframe = currentKeyframe;
+       currentKeyframe = keyframe;
     }
 
-    // TODO: Place at surface
+    mesh.morphTargetInfluences[ keyframe ] =
+        (time % interpolation) / interpolation;
+    mesh.morphTargetInfluences[ lastKeyframe ] = 1 -
+        mesh.morphTargetInfluences[ keyframe ];
+};
+
+GameObject.prototype.getForward = function() {
+    Eto.matrix.extractRotation(this.graphics.matrix);
+    Eto.vector.set(0, 0, 1);
+    return Eto.matrix.multiplyVector3(Eto.vector);
 };
 
 
 var Eto = function() {
     this.CONFIG = ETO_CONFIG_DEFAULT;
-    Input.master = this;
 
     this.characters = [];
     this.items = {};
     this.players = [];
     this.field = null;
+
     this.camera = null;
     this.scene = null;
     this.renderer = null;
@@ -328,7 +418,25 @@ var Eto = function() {
     this.isRunning = false;
 
     this.clock = new THREE.Clock();
+    this.frameTime = this.clock.getElapsedTime();
 };
+
+// Global gravity vector for this game
+Eto.gravity = new THREE.Vector3(ETO_CONFIG_DEFAULT.gravity.x,
+    ETO_CONFIG_DEFAULT.gravity.y, ETO_CONFIG_DEFAULT.gravity.z);
+// Temporary matrix & vector for calculations
+Eto.matrix = new THREE.Matrix4();
+Eto.vector = new THREE.Vector3();
+// Ray caster
+Eto.ray = new THREE.Raycaster();
+
+Object.defineProperty(Eto.prototype, "time", {
+    get: function() { return this.frameTime; }
+});
+
+Object.defineProperty(Eto.prototype, "config", {
+    get: function() { return this.CONFIG; }
+});
 
 Eto.prototype.createCamera = function() {
     var camera = new THREE.PerspectiveCamera(this.CONFIG.camera_fov,
@@ -392,7 +500,7 @@ Eto.prototype.generateField = function(map) {
 
 Eto.prototype.loadField = function(scene, map) {
     var field = new GameObject(scene);
-    console.log("Loading map: ", map);
+    game.log("Loading map: ", map);
     field.setAvatar(map);
     field.loadData(this.dataPath(""), false);
 
@@ -401,7 +509,7 @@ Eto.prototype.loadField = function(scene, map) {
 };
 
 Eto.prototype.createRenderer = function() {
-    renderer = new THREE.WebGLRenderer();
+    var renderer = new THREE.WebGLRenderer();
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     return renderer;
@@ -415,16 +523,17 @@ Eto.prototype.onWindowResize = function() {
 };
 
 Eto.prototype.start = function() {
-    isRunning = true;
+    this.isRunning = true;
+    this.clock.start();
     this.animate();
 };
 
 Eto.prototype.stop = function() {
-    isRunning = false;
+    this.isRunning = false;
 };
 
 Eto.prototype.animate = function() {
-    if(!isRunning) {
+    if(!this.isRunning) {
         return;
     }
 
@@ -432,66 +541,47 @@ Eto.prototype.animate = function() {
 
     this.update();
 
-    renderer.render(this.scene, this.camera);
-};
-
-Eto.prototype.handleInput = function(delta) {
-    for(var i = 0; i < this.players.length; ++i) {
-        this.players[i].handleInput();
-    }
-};
-
-Eto.prototype.handlePhysics = function(delta) {
-    for(var i = 0; i < this.players.length; ++i) {
-        this.players[i].considerSurface(this.field);
-    }
-};
-
-Eto.prototype.updateCamera = function() {
-//    camera.lookAt(cameraTarget);
-};
-
-
-Eto.prototype.animateModel = function(mesh, delta) {
-    var duration = 1000, keyframes = 20, currentKeyframe = 1,
-        interpolation = duration / keyframes, lastKeyframe = 0,
-        time = Date.now() % duration,
-        keyframe = Math.floor( time / interpolation );
-
-    if (keyframe != currentKeyframe) {
-      mesh.morphTargetInfluences[ lastKeyframe ] = 0;
-      mesh.morphTargetInfluences[ currentKeyframe ] = 1;
-      mesh.morphTargetInfluences[ keyframe ] = 0;
-      lastKeyframe = currentKeyframe;
-       currentKeyframe = keyframe;
-    }
-
-    mesh.morphTargetInfluences[ keyframe ] =
-        (time % interpolation) / interpolation;
-    mesh.morphTargetInfluences[ lastKeyframe ] = 1 -
-        mesh.morphTargetInfluences[ keyframe ];
+    this.renderer.render(this.scene, this.camera);
 };
 
 Eto.prototype.update = function() {
     var delta = this.clock.getDelta();
+    this.frameTime = this.clock.getElapsedTime();
+
     THREE.AnimationHandler.update(delta);
 
-/*    var graphics = this.players[0].graphics;
-    if(typeof graphics !== "undefined" && graphics) {
-        if(typeof graphics.morphTargetInfluences !== "undefined") {
-            this.animateModel(graphics, delta);
-        }
-    }
-*/
-
-    this.handleInput(delta);
-    this.handlePhysics(delta);
-
-    this.updateCamera();
+    this.updateInput(delta);
+    this.updatePhysics(delta);
+    this.updateAnimation(delta);
+    this.updateCamera(delta);
 };
+
+Eto.prototype.updateInput = function(delta) {
+    for(var i = 0; i < this.players.length; ++i) {
+        this.players[i].updateInput(delta);
+    }
+};
+
+Eto.prototype.updateAnimation = function(delta) {
+    for(var i = 0; i < this.players.length; ++i) {
+        this.players[i].updateAnimation(delta);
+    }
+};
+
+Eto.prototype.updatePhysics = function(delta) {
+    for(var i = 0; i < this.players.length; ++i) {
+        this.players[i].updatePhysics(delta, this.field);
+    }
+};
+
+Eto.prototype.updateCamera = function(delta) {
+//    this.camera.lookAt(this.cameraTarget);
+};
+
 
 Eto.prototype.loadEntities = function(list) {
     var self = this;
+    var counter = list.slice(0);
 
     var successfun = function(data) {
         self.characters = self.characters.concat(data.characters);
@@ -503,22 +593,28 @@ Eto.prototype.loadEntities = function(list) {
     };
 
     var errorfun = function(hr, status, error) {
-        alert("Error while loading " + url + ": " + status +
+        this.error("Error while loading " + url + ": " + status +
             " - " + error);
     };
 
-    for(var i = 0; i < list.length; ++i) {
-        var url = this.dataPath(list[i]);
+    var completefun = function() {
+        if(counter.length === 0) {
+            self.entitiesLoaded();
+        }
+    };
+
+
+    while(counter.length) {
+        var url = this.dataPath(counter.pop());
         $.ajax({
-            async: false,
+            cache: !this.config.DEBUG,
             url: url,
             dataType: "json",
             success: successfun,
-            error: errorfun
+            error: errorfun,
+            complete: completefun
         });
     }
-
-    this.entitiesLoaded();
 };
 
 
@@ -530,7 +626,7 @@ Eto.prototype.createConnections = function() {
         channel.send("MESSAGE!");
     };
     channel.onmessage = function(event) {
-        console.log(event, event.data);
+        game.log(event, event.data);
     };
 };
 
@@ -539,7 +635,7 @@ Eto.prototype.closeConnections = function() {
 };
 
 Eto.prototype.initGame = function() {
-    console.log("config", this.CONFIG);
+    game.log("config", this.CONFIG);
     this.loadEntities(this.CONFIG.entities);
 };
 
@@ -575,52 +671,64 @@ Eto.prototype.loadItems = function(player) {
 };
 
 
-Eto.prototype.entitiesLoaded = function() {
-    for(var i = 0; i < this.CONFIG.playercount; ++i) {
-        this.createPlayer(i);
-    }
-};
 
 Eto.prototype.dataPath = function(file) {
     return this.CONFIG.basepath + this.CONFIG.datapath + file;
 };
 
+Eto.prototype.log = ETO_CONFIG_DEFAULT.DEBUG ?
+    window.console.log.bind(window.console) : function() {};
 
-Eto.prototype.init = function() {
-    var container = document.getElementById("container");
+Eto.prototype.error = function(message) {
+    this.log(message);
+    this.log((new Error()).stack);
+    alert(message);
+};
 
-    this.camera = this.createCamera();
-    this.scene = this.createScene();
 
-    this.initGame();
 
-    this.connections = this.createConnections();
-
-    this.renderer = this.createRenderer();
-
-    container.appendChild(renderer.domElement);
-
-    $(document).on("keydown", Input.keyDown);
-    $(document).on("keyup", Input.keyUp);
-
-    $("#controls").find("#disconnect").on("click", function() { alert("DISCO!"); });
-
-    $(window).on("resize", this.onWindowResize.bind(this), false);
+Eto.prototype.entitiesLoaded = function() {
+    for(var i = 0; i < this.CONFIG.playercount; ++i) {
+        this.createPlayer(i);
+    }
 
     this.start();
 };
 
+Eto.prototype.init = function() {
+
+    this.connections = this.createConnections();
+
+    this.camera = this.createCamera();
+    this.scene = this.createScene();
+
+    this.renderer = this.createRenderer();
+    var container = document.getElementById("container");
+    container.appendChild(this.renderer.domElement);
+
+    $(document).on("keydown", Input.keyDown);
+    $(document).on("keyup", Input.keyUp);
+
+    $("#controls").find("#disconnect").on("click",
+        function() { this.error("DISCO!"); });
+
+    $(window).on("resize", this.onWindowResize.bind(this), false);
+
+    this.initGame();
+};
+
 function loadConfiguration(game) {
     $.ajax({
-        url: game.CONFIG.basepath + game.CONFIG.configuration_file,
+        url: game.config.basepath + game.config.configuration_file,
+        cache: !game.config.DEBUG,
         dataType: "json",
         success: function(data) {
             for(var setting in data) {
-                game.CONFIG[setting] = data[setting];
+                game.config[setting] = data[setting];
             }
         },
         error: function(hr, status, error) {
-            alert("Error while loading " + url + ": " + status +
+            game.error("Error while loading " + url + ": " + status +
                 " - " + error);
         },
         complete: function() {
