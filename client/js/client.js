@@ -408,6 +408,9 @@ GameObject.prototype.fire = function(slot) {
             case "particle":
                 this.fireFlamer(slot);
                 break;
+            case "laser":
+                this.fireLaser(slot);
+                break;
             default:
                 game.error("Not implemented " + item.type);
         }
@@ -415,15 +418,31 @@ GameObject.prototype.fire = function(slot) {
 };
 
 GameObject.prototype.fireGun = function(slot) {
-   game.log("Firing: ", slot.item.name);
+    game.log("Firing: ", slot.item.name);
+
+    var origin = slot.graphics.position;
+    var direction = slot.getForward();
+    GameObject.ray.set(origin, direction);
 };
 
 GameObject.prototype.fireProjectile = function(slot) {
-   game.log("Firing: ", slot.item.name);
+    game.log("Firing: ", slot.item.name);
+    fireGun(slot);
 };
 
 GameObject.prototype.fireSpecial = function(slot) {
-   game.log("Firing: ", slot.item.name);
+    game.log("Firing: ", slot.item.name);
+    fireGun(slot);
+};
+
+GameObject.prototype.fireFlamer = function(slot) {
+    game.log("Firing: ", slot.item.name);
+    fireGun(slot);
+};
+
+GameObject.prototype.fireLaser = function(slot) {
+    game.log("Firing: ", slot.item.name);
+    fireGun(slot);
 };
 
 GameObject.prototype.handleFly = function() {
