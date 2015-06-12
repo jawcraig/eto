@@ -134,9 +134,9 @@ Audio.prototype.createPanner = function() {
 };
 
 Audio.prototype.updatePannerPosition = function(panner, object) {
-    GameObject.vector.setFromMatrixPosition(object.graphics.matrixWorld);
-    panner.setPosition(GameObject.vector.x, GameObject.vector.y,
-        GameObject.vector.z);
+    Entity.vector.setFromMatrixPosition(object.graphics.matrixWorld);
+    panner.setPosition(Entity.vector.x, Entity.vector.y,
+        Entity.vector.z);
     // TODO: Doppler, listener direction:
 // http://www.html5rocks.com/en/tutorials/webaudio/positional_audio/http://www.html5rocks.com/en/tutorials/webaudio/positional_audio/
 };
@@ -144,9 +144,9 @@ Audio.prototype.updatePannerPosition = function(panner, object) {
 Audio.prototype.updateListenerPosition = function(camera) {
     camera.position.set(x, y, z);
     camera.updateMatrixWorld();
-    GameObject.vector.setFromMatrixPosition(camera.matrixWorld);
-    this.context.listener.setPosition(GameObject.vector.x,
-        GameObject.vector.y, GameObject.vector.z);
+    Entity.vector.setFromMatrixPosition(camera.matrixWorld);
+    this.context.listener.setPosition(Entity.vector.x,
+        Entity.vector.y, Entity.vector.z);
 };
 
 Audio.prototype.playSound = function(source, buffer, destination, time) {
@@ -175,7 +175,7 @@ Audio.prototype.playSound = function(source, buffer, destination, time) {
 /** Game Object **/
 
 
-var GameObject = function(parent) {
+var Entity = function(parent) {
     this.parent = parent;
 
     var material = new THREE.MeshBasicMaterial({color: 0xB0C0D0});
@@ -184,34 +184,34 @@ var GameObject = function(parent) {
 };
 
 // Global gravity vector - usually negative y
-GameObject.gravity = new THREE.Vector3(ETO_CONFIG_DEFAULT.gravity.x,
+Entity.gravity = new THREE.Vector3(ETO_CONFIG_DEFAULT.gravity.x,
     ETO_CONFIG_DEFAULT.gravity.y, ETO_CONFIG_DEFAULT.gravity.z);
 // Global forward vector - usually positive z
-GameObject.forward = new THREE.Vector3(ETO_CONFIG_DEFAULT.forward.x,
+Entity.forward = new THREE.Vector3(ETO_CONFIG_DEFAULT.forward.x,
     ETO_CONFIG_DEFAULT.forward.y, ETO_CONFIG_DEFAULT.forward.z);
 // Temporary matrix & vector for calculations
-GameObject.matrix = new THREE.Matrix4();
-GameObject.vector = new THREE.Vector3();
+Entity.matrix = new THREE.Matrix4();
+Entity.vector = new THREE.Vector3();
 // Ray caster
-GameObject.ray = new THREE.Raycaster();
+Entity.ray = new THREE.Raycaster();
 
 
-GameObject.prototype.setPlayer = function(player) {
+Entity.prototype.setPlayer = function(player) {
     this.player = player;
 };
 
-GameObject.prototype.setAvatar = function(avatar) {
+Entity.prototype.setAvatar = function(avatar) {
     this.avatar = avatar;
 };
 
-GameObject.prototype.setItem = function(item) {
+Entity.prototype.setItem = function(item) {
     this.item = item;
     this.item.lastFired = 0;
 
     this.setModel(this.item.model);
 };
 
-GameObject.prototype.setModel = function(model) {
+Entity.prototype.setModel = function(model) {
     if(typeof this.avatar === "undefined") {
         this.avatar = {};
     }
@@ -225,7 +225,7 @@ GameObject.prototype.setModel = function(model) {
 /** GRAPHICS system **/
 
 
-GameObject.prototype.loadData = function(path, animated) {
+Entity.prototype.loadData = function(path, animated) {
     if(typeof this.graphics === "undefined" || !this.graphics) {
         this.graphics = this.getPlaceHolder();
         this.parent.add(this.graphics);
@@ -247,14 +247,14 @@ GameObject.prototype.loadData = function(path, animated) {
     }
 };
 
-GameObject.prototype.getPlaceHolder = function() {
+Entity.prototype.getPlaceHolder = function() {
     var emptyGeometry = new THREE.BoxGeometry(3, 3, 3, 2, 2, 2);
     var emptyMaterial = new THREE.MeshBasicMaterial({color:0x0000FF});
     var mesh = new THREE.SkinnedMesh(emptyGeometry, emptyMaterial, false);
     return mesh;
 };
 
-GameObject.prototype.loadModel = function(modelurl) {
+Entity.prototype.loadModel = function(modelurl) {
     var self = this;
 
     game.log("Loading model " + modelurl);
@@ -279,7 +279,7 @@ GameObject.prototype.loadModel = function(modelurl) {
     );
 };
 
-GameObject.prototype.loadAnimatedModel = function(modelurl) {
+Entity.prototype.loadAnimatedModel = function(modelurl) {
     var self = this;
 
     game.log("Loading skinned model " + modelurl);
@@ -312,7 +312,7 @@ GameObject.prototype.loadAnimatedModel = function(modelurl) {
     );
 };
 
-GameObject.prototype.finalizeGraphics = function(mesh) {
+Entity.prototype.finalizeGraphics = function(mesh) {
     this.graphics = mesh;
 
     var props = this.avatar;
@@ -338,7 +338,7 @@ GameObject.prototype.finalizeGraphics = function(mesh) {
 /** AI system **/
 
 
-GameObject.prototype.updateInput = function(delta) {
+Entity.prototype.updateInput = function(delta) {
     if(this.player.connection != "local") {
         return;
     }
@@ -364,7 +364,7 @@ GameObject.prototype.updateInput = function(delta) {
     this.handleActions();
 };
 
-GameObject.prototype.handleActions = function() {
+Entity.prototype.handleActions = function() {
     var controls = this.player.controls;
     var graphics = this.graphics;
 
@@ -387,7 +387,7 @@ GameObject.prototype.handleActions = function() {
     }
 };
 
-GameObject.prototype.fire = function(slot) {
+Entity.prototype.fire = function(slot) {
     var item = slot.item;
 
     if(game.time - item.lastFired >
@@ -417,35 +417,35 @@ GameObject.prototype.fire = function(slot) {
     }
 };
 
-GameObject.prototype.fireGun = function(slot) {
+Entity.prototype.fireGun = function(slot) {
     game.log("Firing: ", slot.item.name);
 
     var origin = slot.graphics.position;
     var direction = slot.getForward();
-    GameObject.ray.set(origin, direction);
+    Entity.ray.set(origin, direction);
 };
 
-GameObject.prototype.fireProjectile = function(slot) {
+Entity.prototype.fireProjectile = function(slot) {
     game.log("Firing: ", slot.item.name);
     fireGun(slot);
 };
 
-GameObject.prototype.fireSpecial = function(slot) {
+Entity.prototype.fireSpecial = function(slot) {
     game.log("Firing: ", slot.item.name);
     fireGun(slot);
 };
 
-GameObject.prototype.fireFlamer = function(slot) {
+Entity.prototype.fireFlamer = function(slot) {
     game.log("Firing: ", slot.item.name);
     fireGun(slot);
 };
 
-GameObject.prototype.fireLaser = function(slot) {
+Entity.prototype.fireLaser = function(slot) {
     game.log("Firing: ", slot.item.name);
     fireGun(slot);
 };
 
-GameObject.prototype.handleFly = function() {
+Entity.prototype.handleFly = function() {
     var controls = this.player.controls;
     var graphics = this.graphics;
     var avatar = this.avatar;
@@ -470,7 +470,7 @@ GameObject.prototype.handleFly = function() {
     }
 };
 
-GameObject.prototype.handleWalk = function() {
+Entity.prototype.handleWalk = function() {
     var controls = this.player.controls;
     var graphics = this.graphics;
     var avatar = this.avatar;
@@ -498,11 +498,11 @@ GameObject.prototype.handleWalk = function() {
 /** Physics system **/
 
 
-GameObject.prototype.updatePhysics = function(delta, terrain) {
+Entity.prototype.updatePhysics = function(delta, terrain) {
     this.considerSurface(delta, terrain);
 };
 
-GameObject.prototype.considerSurface = function(delta, terrain) {
+Entity.prototype.considerSurface = function(delta, terrain) {
     var surface = terrain.graphics;
 /* TODO: Separate collision mesh loading
     var surface = terrain.collisionMesh;
@@ -513,11 +513,11 @@ GameObject.prototype.considerSurface = function(delta, terrain) {
     }
 */
 
-    GameObject.vector.copy(this.graphics.position);
-    GameObject.vector.y += game.config.feet_height;
-    GameObject.ray.set(GameObject.vector, GameObject.gravity);
+    Entity.vector.copy(this.graphics.position);
+    Entity.vector.y += game.config.feet_height;
+    Entity.ray.set(Entity.vector, Entity.gravity);
 
-    var intersects = GameObject.ray.intersectObject(surface);
+    var intersects = Entity.ray.intersectObject(surface);
     if(intersects.length > 0) {
         this.feet.position.copy(intersects[0].point);
         if(this.avatar.type == "walker") {
@@ -530,7 +530,7 @@ GameObject.prototype.considerSurface = function(delta, terrain) {
 /** Animation system **/
 
 
-GameObject.prototype.updateAnimation = function(delta) {
+Entity.prototype.updateAnimation = function(delta) {
     var graphics = this.graphics;
     if(typeof graphics !== "undefined" && graphics) {
         if(typeof graphics.morphTargetInfluences !== "undefined") {
@@ -539,7 +539,7 @@ GameObject.prototype.updateAnimation = function(delta) {
     }
 };
 
-GameObject.prototype.animateModel = function(delta) {
+Entity.prototype.animateModel = function(delta) {
     var mesh = this.graphics;
 
     var duration = 1000, keyframes = 20, currentKeyframe = 1,
@@ -561,9 +561,9 @@ GameObject.prototype.animateModel = function(delta) {
         mesh.morphTargetInfluences[ keyframe ];
 };
 
-GameObject.prototype.getForward = function() {
-    GameObject.matrix.extractRotation(this.graphics.matrix);
-    return GameObject.matrix.multiplyVector3(GameObject.forward);
+Entity.prototype.getForward = function() {
+    Entity.matrix.extractRotation(this.graphics.matrix);
+    return Entity.matrix.multiplyVector3(Entity.forward);
 };
 
 
@@ -650,7 +650,7 @@ Eto.prototype.createSky = function() {
 };
 
 Eto.prototype.generateField = function(map) {
-    var field = new GameObject(this.scene);
+    var field = new Entity(this.scene);
     var geometry = new THREE.PlaneGeometry(170, 170, 3, 3);
     var material = new THREE.MeshBasicMaterial({color: 0x113377, side: THREE.DoubleSided});
     field.graphics = new THREE.Mesh(geometry, material);
@@ -662,7 +662,7 @@ Eto.prototype.generateField = function(map) {
 };
 
 Eto.prototype.loadField = function(scene, map) {
-    var field = new GameObject(scene);
+    var field = new Entity(scene);
     game.log("Loading map: ", map);
     field.setAvatar(map);
     field.loadData(this.dataPath(""), false);
@@ -834,7 +834,7 @@ Eto.prototype.randomizeCharacter = function() {
 };
 
 Eto.prototype.createPlayer = function(index) {
-    this.players[index] = new GameObject(this.scene);
+    this.players[index] = new Entity(this.scene);
     var player = this.players[index];
     player.setPlayer(this.CONFIG.players[index]);
     player.setAvatar(this.randomizeCharacter());
@@ -846,7 +846,7 @@ Eto.prototype.createPlayer = function(index) {
 Eto.prototype.loadItems = function(player) {
     player.items = [];
     for(var i = 0; i < player.avatar.items.length; ++i) {
-        var item = new GameObject(this.scene);
+        var item = new Entity(this.scene);
         item.setAvatar(player.avatar.items[i]);
         item.setItem(this.items[item.avatar.name]);
         item.loadData(this.dataPath(""), false);
