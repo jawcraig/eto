@@ -8,6 +8,7 @@
         <script src="js/jquery-1.11.3.min.js"></script>
         <script src="js/three.min.js"></script>
         <script src="js/rtcadapter.js"></script>
+        <script src="js/msgpack-js.js"></script>
     </head>
     <body>
         <div id="container"></div>
@@ -50,12 +51,41 @@
                         <input id="audio3d" type="checkbox" checked>
                         <label for="audio3d">Use positional audio</label>
                         </p>
+
+                        <br>
+
+                        <p>
+                        <label for="soundtrack">Select song:</label>
+                        <select id="soundtrack" list="soundtracks">
+                        </select>
+                        <br>
+                        <datalist id="soundtracks">
+                        </datalist>
+                        <br>
+                        <audio id="musicplayer" preload="none"
+                                autoplay controls>
+                            <source id="musicsource"
+                                src="data/tempest.mp3" type="audio/mpeg"/>
+                            <em> No support for HTML5 audio, sorry. </em>
+                        </audio>
+                        </p>
                     </div>
                 </div>
 
                 <div class="tab">
                     <input type="radio" id="tab3" name="tabgroup1">
                     <label class="tablabel" for="tab3">
+                        <span class="nonselectable">Network</span>
+                    </label>
+
+                    <div class="content">
+                        <button type="button" id="disconnect">/Disco</button>
+                    </div>
+                </div>
+
+                <div class="tab">
+                    <input type="radio" id="tab4" name="tabgroup1">
+                    <label class="tablabel" for="tab4">
                         <span class="nonselectable">Misc</span>
                     </label>
 
@@ -91,9 +121,6 @@
                 <span id="kills">1</span> /
                 <span id="deaths">0</span>
             </div>
-        </div>
-        <div id="controls">
-            <button type="button" id="disconnect">/Disco</button>
         </div>
 
         <script src="js/client.js"></script>

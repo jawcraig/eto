@@ -1,6 +1,9 @@
 // Author: jawcraig (jawcraig@gmail.com)
 
 var ETO_CONFIG_DEFAULT = {
+    title: "ETO",
+    version: "0.0.1",
+
     DEBUG: true,
 
     configuration_file: "config.json",
@@ -14,23 +17,24 @@ var ETO_CONFIG_DEFAULT = {
     camera_fov: 75,
     camera_near: 1,
     camera_far: 1000,
-    camera_position: {x: 20, y: 70, z: 20},
+    camera_position: {x: 20, y: 40, z: 20},
     camera_up: {x: 0, y: 1, z: 0},
-    camera_lookat: {x: 0, y: 0, z: 0},
+    camera_lookat: {x: 0, y: 20, z: 0},
 
     sky_size: 300,
     sky_color: 0x707090,
 
 
+    play_music: false,
     master_volume: 1.0,
 
 
     gravity: {x: 0, y: -1, z: 0},
-    forward: {x: 1, y: 0, z: 0},
+    forward: {x: 0, y: 0, z: -1},
     feet_height: 100,
-    walk_speed: 0.1,
+    walk_speed: 0.3,
     walk_turn_speed: 0.1,
-    fly_speed: 0.1,
+    fly_speed: 0.3,
     fly_turn_speed: 0.1,
 
     item_cooldown: 1
@@ -186,39 +190,70 @@ var Entity = function(parent) {
 // Global gravity vector - usually negative y
 Entity.gravity = new THREE.Vector3(ETO_CONFIG_DEFAULT.gravity.x,
     ETO_CONFIG_DEFAULT.gravity.y, ETO_CONFIG_DEFAULT.gravity.z);
+Entity.up = new THREE.Vector3(-ETO_CONFIG_DEFAULT.gravity.x,
+    -ETO_CONFIG_DEFAULT.gravity.y, -ETO_CONFIG_DEFAULT.gravity.z);
 // Global forward vector - usually positive z
 Entity.forward = new THREE.Vector3(ETO_CONFIG_DEFAULT.forward.x,
     ETO_CONFIG_DEFAULT.forward.y, ETO_CONFIG_DEFAULT.forward.z);
 // Temporary matrix & vector for calculations
 Entity.matrix = new THREE.Matrix4();
+Entity.quaternion = new THREE.Quaternion();
 Entity.vector = new THREE.Vector3();
 // Ray caster
 Entity.ray = new THREE.Raycaster();
 
-
-Entity.prototype.setPlayer = function(player) {
-    this.player = player;
+Entity.hasComponent = function(component) {
+    return (typeof component !== "undefined" && component !== null);
 };
+
 
 Entity.prototype.setAvatar = function(avatar) {
     this.avatar = avatar;
 };
 
-Entity.prototype.setItem = function(item) {
+Entity.prototype.setProjectile = function(item) {
     this.item = item;
-    this.item.lastFired = 0;
+    this.avatar.model = this.item.projectile;
+};
+
+Entity.prototype.setPlayer = function(player) {
+    this.health = 0;
+
+    this.player = player;
+
+    if(this.avatar.type == "flyer") {
+        this.avatar.speed = this.avatar.speed * game.config.fly_speed;
+        this.avatar.turn = this.avatar.turn * game.config.fly_turn_speed;
+    }
+    else {
+        this.avatar.speed = this.avatar.speed * game.config.walk_speed;
+        this.avatar.turn = this.avatar.turn * game.config.walk_turn_speed;
+    }
+};
+
+Entity.prototype.setItem = function(item) {
+    this.lastFired = 0;
+
+    this.item = item;
 
     this.setModel(this.item.model);
+
+    var geometry = new THREE.BoxGeometry(10.2, 0.2, 0.2);
+    var material = new THREE.MeshBasicMaterial({color: 0xE010D0});
+    this.shot = new THREE.Mesh(geometry, material);
+
+    geometry = new THREE.BoxGeometry(1, 1, 1);
+    material = new THREE.MeshBasicMaterial({color: 0xFF1010});
+    this.crosshair = new THREE.Mesh(geometry, material);
+    this.crosshair.position.set(0, 0, -10);
 };
 
 Entity.prototype.setModel = function(model) {
-    if(typeof this.avatar === "undefined") {
+    if(!Entity.hasComponent(this.avatar)) {
         this.avatar = {};
     }
 
-    if(typeof model !== "undefined") {
-        this.avatar.model = model;
-    }
+    this.avatar.model = model;
 };
 
 
@@ -226,16 +261,27 @@ Entity.prototype.setModel = function(model) {
 
 
 Entity.prototype.loadData = function(path, animated) {
-    if(typeof this.graphics === "undefined" || !this.graphics) {
-        this.graphics = this.getPlaceHolder();
-        this.parent.add(this.graphics);
-    }
+    // Load Scripts
 
-    if(typeof this.avatar === "undefined" || this.avatar === null) {
+    // Load Audio
+
+    // Load Graphics
+
+    if(!Entity.hasComponent(this.avatar)) {
         return;
     }
 
-    if(typeof this.avatar.model !== "undefined" && this.avatar.model) {
+    if(!Entity.hasComponent(this.graphics)) {
+        this.graphics = this.getPlaceHolder();
+
+        if(this.parent) {
+            this.parent.graphics.add(this.graphics);
+        }
+        this.collisionMesh = this.graphics;
+    }
+
+    // TODO: support .pack format, deduce skinning from the json contents
+    if(Entity.hasComponent(this.avatar.model)) {
         if(animated) {
             game.log("loadAnimated:", this, this.avatar.name);
             this.loadAnimatedModel(path + this.avatar.model);
@@ -245,17 +291,44 @@ Entity.prototype.loadData = function(path, animated) {
             this.loadModel(path + this.avatar.model);
         }
     }
+
+    if(Entity.hasComponent(this.avatar.collision)) {
+        game.log("load collision model:", this.avatar.name);
+        this.loadCollisionModel(path + this.avatar.collision);
+    }
 };
 
 Entity.prototype.getPlaceHolder = function() {
     var emptyGeometry = new THREE.BoxGeometry(3, 3, 3, 2, 2, 2);
     var emptyMaterial = new THREE.MeshBasicMaterial({color:0x0000FF});
     var mesh = new THREE.SkinnedMesh(emptyGeometry, emptyMaterial, false);
+    mesh.name = "placeholder";
     return mesh;
 };
 
+Entity.prototype.loadCollisionModel = function(modelurl) {
+    var self = this;
+
+    game.log("Loading collision model " + modelurl);
+    var loader = new THREE.JSONLoader();
+    loader.load(modelurl,
+        function(geometry, materials) {
+            var material = new THREE.MeshBasicMaterial({color: 0xff0000});
+            var mesh = new THREE.Mesh(geometry, material);
+            self.setMeshProperties(mesh, self.avatar);
+            self.collisionMesh = mesh;
+        }
+    );
+};
 Entity.prototype.loadModel = function(modelurl) {
     var self = this;
+
+    if(Entity.hasComponent(this.avatar.geometry) &&
+            Entity.hasComponent(this.avatar.material)) {
+        var mesh = new THREE.Mesh(this.avatar.geometry);
+        this.finalizeGraphics(mesh);
+        return;
+    }
 
     game.log("Loading model " + modelurl);
     var loader = new THREE.JSONLoader();
@@ -269,10 +342,6 @@ Entity.prototype.loadModel = function(modelurl) {
                 shading: THREE.FlatShading
             });
             var mesh = new THREE.Mesh(geometry, material);
-
-            if(typeof self.graphics !== "undefined" && self.graphics !== null) {
-                self.parent.remove(self.graphics);
-            }
 
             self.finalizeGraphics(mesh);
         }
@@ -296,41 +365,84 @@ Entity.prototype.loadAnimatedModel = function(modelurl) {
             var mesh = new THREE.SkinnedMesh(geometry, material, false);
             mesh.pose();
 
-            if(typeof self.graphics !== "undefined" && self.graphics !== null) {
-                self.parent.remove(self.graphics);
-            }
-
             self.finalizeGraphics(mesh);
 
-            if(typeof geometry.animations !== "undefined" &&
+            if(Entity.hasComponent(geometry.animations) &&
                     geometry.animations.length > 0) {
-                var animation = new THREE.Animation(mesh,
+
+                self.avatar.animation = new THREE.Animation(mesh,
                     geometry.animations[0]);
-                animation.play(0);
+                self.avatar.animation.play(0);
             }
         }
     );
 };
 
-Entity.prototype.finalizeGraphics = function(mesh) {
+Entity.prototype.moveGraphicsRelationsTo = function(mesh) {
+    // TODO: Mishandles bones in skinned mesh!
+
+    var oldgraphics = this.graphics;
     this.graphics = mesh;
 
-    var props = this.avatar;
-
-    if(typeof props.scale !== "undefined" && props.scale !== null) {
-        mesh.scale.set(props.scale.x, props.scale.y, props.scale.z);
-    }
-    if(typeof props.rotation !== "undefined" && props.rotation !== null) {
-        mesh.rotation.set(props.rotation.x, props.rotation.y, props.rotation.z);
-    }
-    if(typeof props.position !== "undefined" && props.position !== null) {
-        mesh.position.set(props.position.x, props.position.y, props.position.z);
+    var children = oldgraphics.children;
+    while(children.length > 0) {
+        this.graphics.add(children[children.length - 1]);
     }
 
-    this.parent.add(mesh);
+    if(Entity.hasComponent(this.parent.graphics)) {
+        this.parent.graphics.remove(oldgraphics);
+        this.parent.graphics.add(this.graphics);
+    }
+};
 
-    if(typeof this.avatar.type !== "undefined" && this.avatar.type == "flyer") {
-        this.parent.add(this.feet);
+Entity.prototype.setMeshProperties = function(mesh, props) {
+    mesh.name = props.name;
+    props.geometry = mesh.geometry;
+    props.material = mesh.material;
+
+    if(Entity.hasComponent(props)) {
+        if(Entity.hasComponent(props.scale)) {
+            mesh.scale.set(props.scale.x,
+                props.scale.y, props.scale.z);
+        }
+        if(Entity.hasComponent(props.rotation)) {
+            mesh.rotation.set(props.rotation.x,
+                props.rotation.y, props.rotation.z);
+        }
+        if(Entity.hasComponent(props.position)) {
+            mesh.position.set(props.position.x,
+                props.position.y, props.position.z);
+        }
+    }
+
+    mesh.geometry.computeBoundingSphere();
+    mesh.geometry.computeBoundingBox();
+};
+
+Entity.prototype.finalizeGraphics = function(mesh) {
+    this.setMeshProperties(mesh, this.avatar);
+
+    this.moveGraphicsRelationsTo(mesh);
+
+    if(Entity.hasComponent(this.avatar) &&
+            Entity.hasComponent(this.avatar.name)) {
+        this.graphics.name = this.avatar.name;
+    }
+
+    if(!Entity.hasComponent(this.avatar.collision)) {
+        this.collisionMesh = this.graphics;
+    }
+
+    if(Entity.hasComponent(this.avatar) && this.avatar.type == "flyer") {
+        game.scene.add(this.feet);
+    }
+
+    if(Entity.hasComponent(this.item) && this.item.type == "gun") {
+        game.scene.add(this.shot);
+    }
+
+    if(Entity.hasComponent(this.crosshair)) {
+        this.graphics.add(this.crosshair);
     }
 };
 
@@ -345,7 +457,7 @@ Entity.prototype.updateInput = function(delta) {
 
     var graphics = this.graphics;
 
-    if(typeof graphics === "undefined" || !graphics) {
+    if(!Entity.hasComponent(graphics)) {
         return;
     }
 
@@ -356,6 +468,9 @@ Entity.prototype.updateInput = function(delta) {
     }
     else if(avatar.type == "flyer") {
         this.handleFly();
+    }
+    else if(avatar.type == "projectile") {
+        this.handleProjectile();
     }
     else {
         game.log("Unknown avatar type: ", avatar.type);
@@ -390,10 +505,10 @@ Entity.prototype.handleActions = function() {
 Entity.prototype.fire = function(slot) {
     var item = slot.item;
 
-    if(game.time - item.lastFired >
+    if(game.time - slot.lastFired >
             game.config.item_cooldown * item.cooldown) {
 
-        item.lastFired = game.time;
+        slot.lastFired = game.time;
 
         switch(item.type) {
             case "gun":
@@ -420,77 +535,121 @@ Entity.prototype.fire = function(slot) {
 Entity.prototype.fireGun = function(slot) {
     game.log("Firing: ", slot.item.name);
 
-    var origin = slot.graphics.position;
+    slot.shot.position.setFromMatrixPosition(slot.graphics.matrixWorld);
     var direction = slot.getForward();
-    Entity.ray.set(origin, direction);
+
+    Entity.ray.set(slot.shot.position, direction);
+    game.log(slot.shot.position, direction);
+
+    // TODO: Use collisionMesh! <- global getter to this?
+    var surface = game.field.collisionMesh;
+
+    var intersects = Entity.ray.intersectObject(surface);
+    if(intersects.length > 0) {
+        console.log(intersects[0]);
+        slot.shot.position.copy(intersects[0].point);
+        slot.shot.lookAt(intersects[0].face.normal);
+        game.log("hits the ground", slot.shot);
+    }
+    else {
+        slot.shot.lookAt(direction.add(slot.shot.position));
+        game.log("nocollision", slot.shot);
+    }
 };
 
 Entity.prototype.fireProjectile = function(slot) {
     game.log("Firing: ", slot.item.name);
-    fireGun(slot);
+    game.createProjectile(slot);
 };
 
 Entity.prototype.fireSpecial = function(slot) {
     game.log("Firing: ", slot.item.name);
-    fireGun(slot);
+    fireSpecial(slot);
 };
 
 Entity.prototype.fireFlamer = function(slot) {
     game.log("Firing: ", slot.item.name);
-    fireGun(slot);
+    fireFlamer(slot);
 };
 
 Entity.prototype.fireLaser = function(slot) {
     game.log("Firing: ", slot.item.name);
-    fireGun(slot);
+    fireLaser(slot);
 };
 
-Entity.prototype.handleFly = function() {
+Entity.prototype.handleProjectile = function(delta) {
+    var graphics = this.graphics;
+
+    Entity.vector = this.getForward().multiplyScalar(this.item.speed);
+    graphics.position.add(Entity.vector);
+
+    if(Entity.hasComponent(this.item)) {
+        if(Entity.hasComponent(this.item.gravity)) {
+            var accel = this.item.gravity;
+        }
+    }
+/*
+    Entity.quaternion.setFromAxisAngle(Entity.up, avatar.turn);
+    Entity.quaternion.multiplyQuaternions(graphics.quaternion,
+        Entity.quaternion);
+    graphics.setRotationFromQuaternion(Entity.quaternion);
+*/
+};
+
+Entity.prototype.handleFly = function(delta) {
     var controls = this.player.controls;
     var graphics = this.graphics;
     var avatar = this.avatar;
 
-    var xdelta = -Math.sin(graphics.rotation.y);
-    var ydelta = -Math.cos(graphics.rotation.y);
-
-    graphics.position.x += game.config.fly_speed * avatar.move * xdelta;
-    graphics.position.z += game.config.fly_speed * avatar.move * ydelta;
+    Entity.vector = this.getForward().multiplyScalar(avatar.speed);
 
     if(Input.keys[controls.up]) {
-        graphics.position.y += game.config.fly_speed * avatar.move;
+        Entity.vector.y += avatar.speed;
     }
     if(Input.keys[controls.down]) {
-        graphics.position.y -= game.config.fly_speed * avatar.move;
+        Entity.vector.y -= avatar.speed;
     }
+
+    graphics.position.add(Entity.vector);
+
+
     if(Input.keys[controls.left]) {
-        graphics.rotation.y += game.config.fly_turn_speed * avatar.turn;
+        Entity.quaternion.setFromAxisAngle(Entity.up, avatar.turn);
+        Entity.quaternion.multiplyQuaternions(graphics.quaternion,
+            Entity.quaternion);
+        graphics.setRotationFromQuaternion(Entity.quaternion);
     }
     if(Input.keys[controls.right]) {
-        graphics.rotation.y -= game.config.fly_turn_speed * avatar.turn;
+        Entity.quaternion.setFromAxisAngle(Entity.up, -avatar.turn);
+        Entity.quaternion.multiplyQuaternions(graphics.quaternion,
+            Entity.quaternion);
+        graphics.setRotationFromQuaternion(Entity.quaternion);
     }
 };
 
-Entity.prototype.handleWalk = function() {
+Entity.prototype.handleWalk = function(delta) {
     var controls = this.player.controls;
     var graphics = this.graphics;
     var avatar = this.avatar;
 
-    var xdelta = -Math.sin(graphics.rotation.y);
-    var ydelta = -Math.cos(graphics.rotation.y);
-
     if(Input.keys[controls.up]) {
-        graphics.position.x += game.config.walk_speed * avatar.move * xdelta;
-        graphics.position.z += game.config.walk_speed * avatar.move * ydelta;
+        graphics.position.add(this.getForward().multiplyScalar(avatar.speed));
     }
     if(Input.keys[controls.down]) {
-        graphics.position.x -= game.config.walk_speed * avatar.move * xdelta;
-        graphics.position.z -= game.config.walk_speed * avatar.move * ydelta;
+        graphics.position.add(this.getForward().multiplyScalar(-avatar.speed));
     }
+
     if(Input.keys[controls.left]) {
-        graphics.rotation.y += game.config.walk_turn_speed * avatar.turn;
+        Entity.quaternion.setFromAxisAngle(Entity.up, avatar.turn);
+        Entity.quaternion.multiplyQuaternions(graphics.quaternion,
+            Entity.quaternion);
+        graphics.setRotationFromQuaternion(Entity.quaternion);
     }
     if(Input.keys[controls.right]) {
-        graphics.rotation.y -= game.config.walk_turn_speed * avatar.turn;
+        Entity.quaternion.setFromAxisAngle(Entity.up, -avatar.turn);
+        Entity.quaternion.multiplyQuaternions(graphics.quaternion,
+            Entity.quaternion);
+        graphics.setRotationFromQuaternion(Entity.quaternion);
     }
 };
 
@@ -499,30 +658,40 @@ Entity.prototype.handleWalk = function() {
 
 
 Entity.prototype.updatePhysics = function(delta, terrain) {
-    this.considerSurface(delta, terrain);
+    if(Entity.hasComponent(this.player)) {
+        this.considerSurface(delta, terrain);
+    }
 };
 
 Entity.prototype.considerSurface = function(delta, terrain) {
     var surface = terrain.graphics;
-/* TODO: Separate collision mesh loading
-    var surface = terrain.collisionMesh;
 
-    if(typeof surface === "undefined" || surface === null) {
-        game.log("No collision mesh on surface:", terrain);
-        surface = terrain.graphics;
-    }
-*/
-
-    Entity.vector.copy(this.graphics.position);
+    Entity.vector.setFromMatrixPosition(this.graphics.matrixWorld);
     Entity.vector.y += game.config.feet_height;
     Entity.ray.set(Entity.vector, Entity.gravity);
 
     var intersects = Entity.ray.intersectObject(surface);
     if(intersects.length > 0) {
-        this.feet.position.copy(intersects[0].point);
+        var closest = intersects[0];
+        this.feet.position.copy(closest.point);
         if(this.avatar.type == "walker") {
-            this.graphics.position.copy(intersects[0].point);
+            this.graphics.position.y = closest.point.y;
+
+            Entity.quaternion.setFromUnitVectors(closest.face.normal, Entity.up);
+            Entity.quaternion.multiplyQuaternions(Entity.quaternion, this.graphics.quaternion);
+            //this.graphics.setRotationFromQuaternion(Entity.quaternion);
+
         }
+        else {
+            if(closest.distance - game.config.feet_height <
+                this.graphics.geometry.boundingSphere.radius) {
+                // TODO: Handle collision with ground!
+                game.log("Hits the ground!", closest.distance);
+            }
+        }
+    }
+    else {
+        game.log("misses the ground", Entity.ray.origin, Entity.ray.direction);
     }
 };
 
@@ -532,8 +701,8 @@ Entity.prototype.considerSurface = function(delta, terrain) {
 
 Entity.prototype.updateAnimation = function(delta) {
     var graphics = this.graphics;
-    if(typeof graphics !== "undefined" && graphics) {
-        if(typeof graphics.morphTargetInfluences !== "undefined") {
+    if(Entity.hasComponent(graphics)) {
+        if(Entity.hasComponent(graphics.morphTargetInfluences)) {
             this.animateModel(graphics, delta);
         }
     }
@@ -562,8 +731,9 @@ Entity.prototype.animateModel = function(delta) {
 };
 
 Entity.prototype.getForward = function() {
-    Entity.matrix.extractRotation(this.graphics.matrix);
-    return Entity.matrix.multiplyVector3(Entity.forward);
+    Entity.matrix.extractRotation(this.graphics.matrixWorld);
+    Entity.vector.copy(Entity.forward);
+    return Entity.vector.applyMatrix4(Entity.matrix);
 };
 
 
@@ -580,6 +750,7 @@ var Eto = function() {
 
     this.characters = [];
     this.items = {};
+    this.projectiles = [];
     this.players = [];
     this.field = null;
 
@@ -601,11 +772,7 @@ Object.defineProperty(Eto.prototype, "config", {
     get: function() { return this.CONFIG; }
 });
 
-Eto.prototype.createCamera = function() {
-    var camera = new THREE.PerspectiveCamera(this.CONFIG.camera_fov,
-        window.innerWidth / window.innerHeight,
-        this.CONFIG.camera_near, this.CONFIG.camera_far);
-
+Eto.prototype.initCamera = function(camera) {
     camera.position.set(
         this.CONFIG.camera_position.x,
         this.CONFIG.camera_position.y,
@@ -618,7 +785,14 @@ Eto.prototype.createCamera = function() {
         this.CONFIG.camera_lookat.x,
         this.CONFIG.camera_lookat.y,
         this.CONFIG.camera_lookat.z));
+};
 
+Eto.prototype.createCamera = function() {
+    var camera = new THREE.PerspectiveCamera(this.CONFIG.camera_fov,
+        window.innerWidth / window.innerHeight,
+        this.CONFIG.camera_near, this.CONFIG.camera_far);
+
+    this.initCamera(camera);
     return camera;
 };
 
@@ -626,12 +800,16 @@ Eto.prototype.createScene = function() {
     var scene = new THREE.Scene();
     //scene.fog = new THREE.FogExp2(0x000010, 0.04);
 
+    scene.name = this.config.title;
+
+    this.master = new Entity(null);
+    this.master.parent = this.master;
+    this.master.graphics = scene;
+
     scene.add(new THREE.AxisHelper(50));
 
     this.sky = this.createSky();
     scene.add(this.sky);
-
-    this.field = this.loadField(scene, this.randomizeMap());
 
     scene.add(new THREE.AmbientLight(0xbbbbbb));
     var point = new THREE.PointLight(0x6f4420, 10, 500);
@@ -645,12 +823,14 @@ Eto.prototype.createSky = function() {
     var geometry = new THREE.SphereGeometry(this.CONFIG.sky_size, 8, 8);
     var material = new THREE.MeshBasicMaterial({color: this.CONFIG.sky_color});
     material.side = THREE.DoubleSide;
+    var sky = new THREE.Mesh(geometry, material);
+    sky.name = "skysphere";
 
-    return new THREE.Mesh(geometry, material);
+    return sky;
 };
 
 Eto.prototype.generateField = function(map) {
-    var field = new Entity(this.scene);
+    var field = new Entity(this.master);
     var geometry = new THREE.PlaneGeometry(170, 170, 3, 3);
     var material = new THREE.MeshBasicMaterial({color: 0x113377, side: THREE.DoubleSided});
     field.graphics = new THREE.Mesh(geometry, material);
@@ -661,15 +841,40 @@ Eto.prototype.generateField = function(map) {
     return field;
 };
 
-Eto.prototype.loadField = function(scene, map) {
-    var field = new Entity(scene);
+Eto.prototype.createField = function(map) {
+    var field = new Entity(this.master);
     game.log("Loading map: ", map);
     field.setAvatar(map);
     field.loadData(this.dataPath(""), false);
 
-    field.collisionMesh = field.graphics;
     return field;
 };
+
+
+
+Eto.prototype.createAudio = function() {
+    return new Audio();
+};
+
+Eto.prototype.createMusic = function(map) {
+    // TODO: Remove all songs in the list
+
+    for(var song in map.music) {
+        $("#soundtracks").append($("<option />").
+            val(map.music[song].src).html(map.music[song].title));
+    }
+
+    if(map.music.length > 0) {
+        this.selectSong(map.music[0].src);
+    }
+};
+
+Eto.prototype.selectSong = function(src) {
+    // TODO: What if type changes? Someone might use OGG?
+    $("#musicplayer").find("#musicsource").attr("src", src);
+};
+
+
 
 Eto.prototype.createRenderer = function() {
     var renderer = new THREE.WebGLRenderer();
@@ -699,7 +904,8 @@ Eto.prototype.stop = function() {
 };
 
 Eto.prototype.togglePause = function() {
-// TODO: This really fracks up the animation delta calculation
+// TODO: This likely really fracks up the animation delta calculation
+// TODO: This resets frameTime
     if(!this.isPaused) {
         this.isPaused = true;
         this.clock.stop();
@@ -708,7 +914,7 @@ Eto.prototype.togglePause = function() {
         this.isPaused = false;
         this.clock.start();
     }
-}
+};
 
 Eto.prototype.animate = function() {
     if(!this.isRunning) {
@@ -731,11 +937,9 @@ Eto.prototype.update = function() {
 
     this.frameTime += delta;
 
-    THREE.AnimationHandler.update(delta);
-
     this.updateInput(delta);
-    this.updatePhysics(delta);
     this.updateAnimation(delta);
+    this.updatePhysics(delta);
     this.updateCamera(delta);
 };
 
@@ -749,15 +953,27 @@ Eto.prototype.updateAnimation = function(delta) {
     for(var i = 0; i < this.players.length; ++i) {
         this.players[i].updateAnimation(delta);
     }
+
+    THREE.AnimationHandler.update(delta);
 };
 
 Eto.prototype.updatePhysics = function(delta) {
     for(var i = 0; i < this.players.length; ++i) {
         this.players[i].updatePhysics(delta, this.field);
     }
+
+    for(i = 0; i < this.projectiles.length; ++i) {
+        this.projectiles[i].updatePhysics(delta, this.field);
+    }
 };
 
 Eto.prototype.updateCamera = function(delta) {
+    // TODO: Smooth movement
+    Entity.vector.set(0, 0, 0);
+/*    for(var index in this.players) {
+        Entity.vector
+    }*/
+    Entity.vector.divideScalar(this.players.length);
 // Zoom camera to contain all objects
 //    this.camera.lookAt(this.cameraTarget);
 };
@@ -777,7 +993,7 @@ Eto.prototype.loadEntities = function(list) {
     };
 
     var errorfun = function(hr, status, error) {
-        this.error("Error while loading " + url + ": " + status +
+        game.error("Error while loading " + url + ": " + status +
             " - " + error);
     };
 
@@ -830,14 +1046,16 @@ Eto.prototype.randomizeMap = function() {
 
 Eto.prototype.randomizeCharacter = function() {
     var index = Math.floor(Math.random() * this.characters.length);
-    return this.characters[index];
+    return this.characters[5];
 };
 
 Eto.prototype.createPlayer = function(index) {
-    this.players[index] = new Entity(this.scene);
+    this.players[index] = new Entity(this.master);
     var player = this.players[index];
-    player.setPlayer(this.CONFIG.players[index]);
     player.setAvatar(this.randomizeCharacter());
+    player.setPlayer(this.CONFIG.players[index]);
+    player.avatar.name = "player";
+    player.title = "player" + index;
     player.loadData(this.dataPath(""), true);
 
     this.loadItems(player);
@@ -846,7 +1064,7 @@ Eto.prototype.createPlayer = function(index) {
 Eto.prototype.loadItems = function(player) {
     player.items = [];
     for(var i = 0; i < player.avatar.items.length; ++i) {
-        var item = new Entity(this.scene);
+        var item = new Entity(player);
         item.setAvatar(player.avatar.items[i]);
         item.setItem(this.items[item.avatar.name]);
         item.loadData(this.dataPath(""), false);
@@ -854,6 +1072,14 @@ Eto.prototype.loadItems = function(player) {
     }
 };
 
+
+Eto.prototype.createProjectile = function(item) {
+    var projectile = new Entity(this.master);
+    projectile.setAvatar(item.item);
+    projectile.setProjectile(item.item);
+    projectile.loadData(this.dataPath(""), false);
+    this.projectiles.push(projectile);
+};
 
 
 Eto.prototype.dataPath = function(file) {
@@ -882,10 +1108,6 @@ Eto.prototype.entitiesLoaded = function() {
     this.start();
 };
 
-Eto.prototype.createAudio = function() {
-    return new Audio();
-};
-
 Eto.prototype.toggleMenu = function() {
     $("#settings").toggleClass("hidden");
 
@@ -893,6 +1115,10 @@ Eto.prototype.toggleMenu = function() {
 };
 
 Eto.prototype.init = function() {
+    this.renderer = this.createRenderer();
+    var container = document.getElementById("container");
+    container.appendChild(this.renderer.domElement);
+
 
     this.connections = this.createConnections();
 
@@ -901,25 +1127,43 @@ Eto.prototype.init = function() {
     this.camera = this.createCamera();
     this.scene = this.createScene();
 
-    this.renderer = this.createRenderer();
-    var container = document.getElementById("container");
-    container.appendChild(this.renderer.domElement);
+    this.field = this.createField(this.randomizeMap());
 
+
+    // Container events
+    $(window).on("resize", this.onWindowResize.bind(this), false);
+
+
+    // Input events
 
     $(document).on("keydown", Input.keyDown);
     $(document).on("keyup", Input.keyUp);
 
-    $("#controls").find("#disconnect").on("click",
-        function() { game.error("DISCO!"); });
 
-    $(window).on("resize", this.onWindowResize.bind(this), false);
+    // Game controls events
+
+
+    // Audio controls events
+
+    $("#soundtracks").on("change", function(event) {
+        game.selectSong($("#soundtracks").val());
+    });
+
+    if(this.config.play_music) {
+        this.createMusic(field);
+    }
+
+    // Network  controls events
+    $("#disconnect").on("click",
+        function() { game.error("DISCO!"); });
 
     this.initGame();
 };
 
 function loadConfiguration(game) {
+    var url = game.config.basepath + game.config.configuration_file;
     $.ajax({
-        url: game.config.basepath + game.config.configuration_file,
+        url: url,
         cache: !game.config.DEBUG,
         dataType: "json",
         success: function(data) {
