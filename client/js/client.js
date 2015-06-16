@@ -217,6 +217,13 @@ Entity.hasComponent = function(component) {
     return (typeof component !== "undefined" && component !== null);
 };
 
+Entity.prototype.startUpdate = function(delta) {
+    if(Entity.hasComponent(this.graphics) &&
+            Entity.hasComponent(this.physics)) {
+        this.physics.oldPosition.copy(this.graphics.position);
+    }
+};
+
 Entity.prototype.setAvatar = function(avatar) {
     this.avatar = avatar;
 };
@@ -240,9 +247,15 @@ Entity.prototype.setProjectile = function(item) {
         // Angle of fire supposing constant elevation, note that max r = v^2/g
         var g = Entity.gravity.length;
         var v2 = Math.pow(this.ai.speed, 2);
-        var r = this.projectile.range;
+        var r = this.item.range;
 
-        this.physics.theta = Math.asin(r * g / v2) / 2;
+        if(Math.abs(r * g) <= Math.abs(v2)) {
+            this.physics.theta = Math.asin(r * g / v2) / 2;
+        }
+        else {
+            game.log("Impossible ballistics given in ", this.item);
+            this.physics.theta = 1;
+        }
     }
 };
 
@@ -260,6 +273,10 @@ Entity.prototype.setPlayer = function(player) {
         this.ai.speed = this.avatar.speed * game.config.walk_speed;
         this.ai.turn = this.avatar.turn * game.config.walk_turn_speed;
     }
+
+    this.physics = {
+        oldPosition: new THREE.Vector3()
+    };
 };
 
 Entity.prototype.setItem = function(item) {
@@ -294,21 +311,19 @@ Entity.prototype.fireProjectileFrom = function(entity, delta) {
     this.graphics.position.setFromMatrixPosition(
         entity.graphics.matrixWorld);
 
-    if(Entity.hasComponent(this.physics.theta)) {
-        // Rotate up from horizontal by theta
-    }
+// TODO: Rotate up from horizontal by theta
+
 // TODO: Get global rotation: ? get quaternion from matrix and extract?
 //  projectile.graphics.rotation.setFromMatrixRotation(
 //        item.graphics.matrixWorld);
 
     // newpos = oldpos + v * t
     this.physics.oldDelta = delta;
-    this.physics.oldPosition.copy(entity.graphics.position);
+    this.physics.oldPosition.copy(entity.parent.physics.oldPosition);
     entity.getForward().multiplyScalar(-this.ai.speed * delta);
     this.physics.oldPosition.add(Entity.vector);
     // Acceleration is 0 until first time step (should be a * t^2)
     // Could also substract: acceleration0 * delta * delta;
-
 };
 
 
@@ -382,7 +397,7 @@ Entity.prototype.loadModel = function(modelurl) {
 
     if(Entity.hasComponent(this.avatar.geometry) &&
             Entity.hasComponent(this.avatar.material)) {
-        console.log("Using cached model");
+        game.log("Using cached model");
         var mesh = new THREE.Mesh(this.avatar.geometry, this.avatar.material);
         this.finalizeGraphics(mesh);
         return;
@@ -414,7 +429,7 @@ Entity.prototype.loadAnimatedModel = function(modelurl) {
 
     if(Entity.hasComponent(this.avatar.geometry) &&
             Entity.hasComponent(this.avatar.material)) {
-        console.log("Using cached skinned model");
+        game.log("Using cached skinned model");
         var mesh = new THREE.Mesh(this.avatar.geometry, this.avatar.material);
         this.finalizeGraphics(mesh);
         return;
@@ -523,7 +538,6 @@ Entity.prototype.finalizeGraphics = function(mesh) {
     }
 };
 
-
 /** AI system **/
 
 
@@ -618,7 +632,7 @@ Entity.prototype.fireGun = function(slot) {
 
     var intersects = Entity.ray.intersectObject(surface);
     if(intersects.length > 0) {
-        console.log(intersects[0]);
+        game.log(intersects[0]);
         slot.shot.position.copy(intersects[0].point);
         slot.shot.lookAt(intersects[0].face.normal);
         game.log("shot hits the ground", slot.shot);
@@ -672,11 +686,13 @@ Entity.prototype.handleProjectile = function(delta) {
 */
 
     // Euler intergrator with zero acceleration : x1 = x + v * t + g
+    // TODO Use this instead of owner
     Entity.vector = this.ai.owner.getForward().multiplyScalar(this.ai.speed);
     if(this.physics.gravity) {
         Entity.vector.add(Entity.gravity);
     }
     graphics.position.add(Entity.vector);
+    
 
 /*
     Entity.quaternion.setFromAxisAngle(Entity.up, avatar.turn);
@@ -788,7 +804,8 @@ Entity.prototype.handleIntersects = function(intersects) {
                     this.ai.type = "exploded";
                 }
 
-                game.log("player exploded!");
+                // TODO: For some reason this is called sometimes for walkers
+                game.log("player hits the ground and exploded!");
                 this.graphics.material.color.setHex(0xFF00FF);
             }
         }
@@ -1073,12 +1090,24 @@ Eto.prototype.update = function() {
         return;
     }
 
-    this.frameTime += delta;
+    this.startUpdate(delta);
 
     this.updateInput(delta);
     this.updateAnimation(delta);
     this.updatePhysics(delta);
     this.updateCamera(delta);
+};
+
+Eto.prototype.startUpdate = function(delta) {
+    this.frameTime += delta;
+
+    for(var i = 0; i < this.players.length; ++i) {
+        this.players[i].startUpdate(delta);
+    } 
+
+    for(i = 0; i < this.projectiles.length; ++i) {
+        this.projectiles[i].startUpdate(delta);
+    }
 };
 
 Eto.prototype.updateInput = function(delta) {
@@ -1240,13 +1269,13 @@ Eto.prototype.loadItems = function(player) {
 
 Eto.prototype.createProjectile = function(item, delta) {
     var projectile = new Entity(this.master);
-    console.log("Item: ", item);
+    game.log("Item: ", item);
     projectile.setAvatar(item.item.projectile);
     projectile.setProjectile(item.item.projectile);
     projectile.loadData(this.dataPath(""), false);
     projectile.fireProjectileFrom(item, delta);
 
-    console.log("Creates projectile:", projectile);
+    game.log("Creates projectile:", projectile);
     this.projectiles.push(projectile);
 };
 
@@ -1318,24 +1347,7 @@ Eto.prototype.toggleMenu = function() {
     this.togglePause();
 };
 
-Eto.prototype.init = function() {
-    this.renderer = this.createRenderer();
-    var container = document.getElementById("container");
-    container.appendChild(this.renderer.domElement);
-
-
-    this.connections = this.createConnections();
-
-    this.audio = this.createAudio();
-
-    this.camera = this.createCamera();
-    this.scene = this.createScene();
-
-
-    // Container events
-    $(window).on("resize", this.onWindowResize.bind(this));
-
-
+Eto.prototype.setGui = function() {
     // Input events
 
     $(document).on("keydown", Input.keyDown);
@@ -1344,6 +1356,7 @@ Eto.prototype.init = function() {
 
     // Game controls events
 
+    // TODO: Not a function
     $("#p1strength").on("change", this.setPlayerStrength.bind(this), 0);
     $("#p2strength").on("change", this.setPlayerStrength.bind(this), 1);
 
@@ -1359,9 +1372,29 @@ Eto.prototype.init = function() {
         this.createMusic(field);
     }
 
-    // Network  controls events
+    // Network controls events
+
     $("#disconnect").on("click",
         function() { game.error("DISCO!"); });
+};
+
+Eto.prototype.init = function() {
+    this.renderer = this.createRenderer();
+    var container = document.getElementById("container");
+    container.appendChild(this.renderer.domElement);
+
+
+    this.connections = this.createConnections();
+
+    this.audio = this.createAudio();
+
+    this.camera = this.createCamera();
+    this.scene = this.createScene();
+
+    // Container events
+    $(window).on("resize", this.onWindowResize.bind(this));
+
+    this.setGui();
 
     this.initGame();
 };
