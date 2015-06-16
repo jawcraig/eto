@@ -23,12 +23,34 @@
 
                     <div class="content">
                         <p>
-                        <label for="playerbalance">Player balance</label>
-                        P1<input id="playerbalance" type="range"
-                            min="0" max="100" value="50">P2
+                        <label for="p1strength">Player 1 power</label>
+                        Handicap <input id="p1strength" type="range"
+                            min="0" max="100" value="50"> Max
                         </p>
                         <p>
-                        <button type="button" id="newround">
+                        <label for="p2strength">Player 2 power</label>
+                        Handicap <input id="p2strength" type="range"
+                            min="0" max="100" value="50"> Max
+                        </p>
+                        <p>
+                        <label for="p1chars">P1 critter:</label>
+                        <select id="p1chars" list="p1charlist">
+                            <option value="" selected> Random </option>
+                        </select>
+                        <p>
+                        <label for="p2chars">P2 critter:</label>
+                        <select id="p2chars" list="p2charlist">
+                            <option value="" selected> Random </option>
+                        </select>
+                        </p>
+                        <p>
+                        <label for="maps">Select playfield:</label>
+                        <select id="maps">
+                            <option value="" selected> Random </option>
+                        </select>
+                        </p>
+                        <p>
+                        <button type="button" id="reset">
                             New round
                         </button>
                         </p>
@@ -58,12 +80,11 @@
                         <label for="soundtrack">Select song:</label>
                         <select id="soundtrack" list="soundtracks">
                         </select>
-                        <br>
                         <datalist id="soundtracks">
                         </datalist>
                         <br>
                         <audio id="musicplayer" preload="none"
-                                autoplay controls>
+                                controls><!--TODO: autoplay-->
                             <source id="musicsource"
                                 src="data/tempest.mp3" type="audio/mpeg"/>
                             <em> No support for HTML5 audio, sorry. </em>
@@ -86,13 +107,16 @@
                 <div class="tab">
                     <input type="radio" id="tab4" name="tabgroup1">
                     <label class="tablabel" for="tab4">
-                        <span class="nonselectable">Misc</span>
+                        <span class="nonselectable">Stats</span>
                     </label>
 
                     <div class="content">
                         <ul>
                             <li>
                         <p>Misc sutfjk</p>
+                            </li>
+                            <li>
+                        <p>Kill/death/hit/miss/shots/chars/suicides</p>
                             </li>
                         </ul>
                     </div>

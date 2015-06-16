@@ -3,27 +3,6 @@
     "entities": [
         "entities.json"
     ],
-    "maps": [
-        {
-            "name": "Hillside",
-            "model": "terrain.json",
-            "collision": "terraincollision.json",
-            "scale": {"x": 170, "y": 100, "z": 170},
-            "position": {"x": 0, "y": -60, "z": 0},
-            "rotation": {"x": 0, "y": -60, "z": 0},
-            "music": [
-                {
-                    "title": "Tempest in Tristram",
-                    "src": "tempest.mp3",
-                    "type": "audio/mpeg"
-                }
-            ]
-        }
-    ],
-    "animations": {
-        "move": "move",
-        "fire": "fire"
-    },
     "playercount": 2,
     "players": [
         {
@@ -49,7 +28,7 @@
                 "right": 68,
                 "down": 83,
                 "primary": 9,
-                "secondary": 0
+                "secondary": 81
             }
         },
         {

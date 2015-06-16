@@ -1,4 +1,22 @@
 {
+    "maps": [
+        {
+            "name": "Hillside",
+            "model": "terrain.json",
+            "collision": "terraincollision.json",
+            "scale": {"x": 170, "y": 100, "z": 170},
+            "position": {"x": 0, "y": -60, "z": 0},
+            "rotation": {"x": 0, "y": -60, "z": 0},
+            "music": [
+                {
+                    "title": "Tempest in Tristram",
+                    "src": "tempest.mp3",
+                    "type": "audio/mpeg"
+                }
+            ]
+        }
+    ],
+
     "characters": [
         {
             "name": "ant", "type": "walker", "model": "ant.json",
@@ -47,6 +65,7 @@
             "items": [{"name":"rockets"}]
         }
     ],
+
     "items": {
         "selfdestruct":{
             "type": "special",

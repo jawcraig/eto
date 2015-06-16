@@ -27,15 +27,24 @@ var ETO_CONFIG_DEFAULT = {
 
     play_music: false,
     master_volume: 1.0,
+    audio_types: [
+        {suffix: ".mp3", type: "audio/mpeg"},
+        {suffix: ".ogg", type: "audio/ogg"}
+    ],
 
 
     gravity: {x: 0, y: -1, z: 0},
-    forward: {x: 0, y: 0, z: -1},
-    feet_height: 100,
-    walk_speed: 0.3,
-    walk_turn_speed: 0.1,
-    fly_speed: 0.3,
-    fly_turn_speed: 0.1,
+    forward: {x: 0, y: 0, z: 1},
+    feet_start_height: 100,
+    feet_end_height: 1,
+
+    walk_speed: 0.03,
+    walk_turn_speed: 0.03,
+    fly_speed: 0.1,
+    fly_turn_speed: 0.03,
+
+    projectile_speed: 0.1,
+    projectile_turn_speed: 0.3,
 
     item_cooldown: 1
 };
@@ -185,6 +194,8 @@ var Entity = function(parent) {
     var material = new THREE.MeshBasicMaterial({color: 0xB0C0D0});
     var geometry = new THREE.BoxGeometry(0.2, 10, 0.2);
     this.feet = new THREE.Mesh(geometry, material);
+
+    this.graphics = null;
 };
 
 // Global gravity vector - usually negative y
@@ -206,14 +217,33 @@ Entity.hasComponent = function(component) {
     return (typeof component !== "undefined" && component !== null);
 };
 
-
 Entity.prototype.setAvatar = function(avatar) {
     this.avatar = avatar;
 };
 
 Entity.prototype.setProjectile = function(item) {
     this.item = item;
-    this.avatar.model = this.item.projectile;
+
+    this.ai = {
+        type: "projectile",
+        speed: this.item.speed * game.config.projectile_speed,
+        turn: this.item.turn * game.config.projectile_turn_speed
+    };
+
+    this.physics = {
+        oldPosition: new THREE.Vector3(),
+        oldDelta: 1,
+        gravity: (Entity.hasComponent(this.item.gravity) && this.item.gravity)
+    };
+
+    if(this.physics.gravity) {
+        // Angle of fire supposing constant elevation, note that max r = v^2/g
+        var g = Entity.gravity.length;
+        var v2 = Math.pow(this.ai.speed, 2);
+        var r = this.projectile.range;
+
+        this.physics.theta = Math.asin(r * g / v2) / 2;
+    }
 };
 
 Entity.prototype.setPlayer = function(player) {
@@ -221,13 +251,14 @@ Entity.prototype.setPlayer = function(player) {
 
     this.player = player;
 
-    if(this.avatar.type == "flyer") {
-        this.avatar.speed = this.avatar.speed * game.config.fly_speed;
-        this.avatar.turn = this.avatar.turn * game.config.fly_turn_speed;
+    this.ai = {type: this.avatar.type};
+    if(this.ai.type == "flyer") {
+        this.ai.speed = this.avatar.speed * game.config.fly_speed;
+        this.ai.turn = this.avatar.turn * game.config.fly_turn_speed;
     }
     else {
-        this.avatar.speed = this.avatar.speed * game.config.walk_speed;
-        this.avatar.turn = this.avatar.turn * game.config.walk_turn_speed;
+        this.ai.speed = this.avatar.speed * game.config.walk_speed;
+        this.ai.turn = this.avatar.turn * game.config.walk_turn_speed;
     }
 };
 
@@ -238,14 +269,16 @@ Entity.prototype.setItem = function(item) {
 
     this.setModel(this.item.model);
 
-    var geometry = new THREE.BoxGeometry(10.2, 0.2, 0.2);
+    var geometry = new THREE.BoxGeometry(0.2, 0.2, 10.2);
     var material = new THREE.MeshBasicMaterial({color: 0xE010D0});
     this.shot = new THREE.Mesh(geometry, material);
 
     geometry = new THREE.BoxGeometry(1, 1, 1);
     material = new THREE.MeshBasicMaterial({color: 0xFF1010});
     this.crosshair = new THREE.Mesh(geometry, material);
-    this.crosshair.position.set(0, 0, -10);
+    Entity.vector.copy(game.config.forward);
+    Entity.vector.multiplyScalar(10);
+    this.crosshair.position.copy(Entity.vector);
 };
 
 Entity.prototype.setModel = function(model) {
@@ -254,6 +287,28 @@ Entity.prototype.setModel = function(model) {
     }
 
     this.avatar.model = model;
+};
+
+Entity.prototype.fireProjectileFrom = function(entity, delta) {
+    this.ai.owner = entity.parent;
+    this.graphics.position.setFromMatrixPosition(
+        entity.graphics.matrixWorld);
+
+    if(Entity.hasComponent(this.physics.theta)) {
+        // Rotate up from horizontal by theta
+    }
+// TODO: Get global rotation: ? get quaternion from matrix and extract?
+//  projectile.graphics.rotation.setFromMatrixRotation(
+//        item.graphics.matrixWorld);
+
+    // newpos = oldpos + v * t
+    this.physics.oldDelta = delta;
+    this.physics.oldPosition.copy(entity.graphics.position);
+    entity.getForward().multiplyScalar(-this.ai.speed * delta);
+    this.physics.oldPosition.add(Entity.vector);
+    // Acceleration is 0 until first time step (should be a * t^2)
+    // Could also substract: acceleration0 * delta * delta;
+
 };
 
 
@@ -271,17 +326,17 @@ Entity.prototype.loadData = function(path, animated) {
         return;
     }
 
-    if(!Entity.hasComponent(this.graphics)) {
-        this.graphics = this.getPlaceHolder();
-
-        if(this.parent) {
-            this.parent.graphics.add(this.graphics);
-        }
-        this.collisionMesh = this.graphics;
-    }
 
     // TODO: support .pack format, deduce skinning from the json contents
     if(Entity.hasComponent(this.avatar.model)) {
+        if(!Entity.hasComponent(this.graphics)) {
+            this.graphics = this.getPlaceHolder();
+            this.collisionMesh = this.graphics;
+            if(Entity.hasComponent(this.parent)) {
+                this.parent.graphics.add(this.graphics);
+            }
+        }
+
         if(animated) {
             game.log("loadAnimated:", this, this.avatar.name);
             this.loadAnimatedModel(path + this.avatar.model);
@@ -302,6 +357,8 @@ Entity.prototype.getPlaceHolder = function() {
     var emptyGeometry = new THREE.BoxGeometry(3, 3, 3, 2, 2, 2);
     var emptyMaterial = new THREE.MeshBasicMaterial({color:0x0000FF});
     var mesh = new THREE.SkinnedMesh(emptyGeometry, emptyMaterial, false);
+    mesh.geometry.computeBoundingSphere();
+    mesh.geometry.computeBoundingBox();
     mesh.name = "placeholder";
     return mesh;
 };
@@ -325,7 +382,8 @@ Entity.prototype.loadModel = function(modelurl) {
 
     if(Entity.hasComponent(this.avatar.geometry) &&
             Entity.hasComponent(this.avatar.material)) {
-        var mesh = new THREE.Mesh(this.avatar.geometry);
+        console.log("Using cached model");
+        var mesh = new THREE.Mesh(this.avatar.geometry, this.avatar.material);
         this.finalizeGraphics(mesh);
         return;
     }
@@ -343,6 +401,9 @@ Entity.prototype.loadModel = function(modelurl) {
             });
             var mesh = new THREE.Mesh(geometry, material);
 
+            self.avatar.geometry = geometry;
+            self.avatar.material = material;
+
             self.finalizeGraphics(mesh);
         }
     );
@@ -351,11 +412,19 @@ Entity.prototype.loadModel = function(modelurl) {
 Entity.prototype.loadAnimatedModel = function(modelurl) {
     var self = this;
 
+    if(Entity.hasComponent(this.avatar.geometry) &&
+            Entity.hasComponent(this.avatar.material)) {
+        console.log("Using cached skinned model");
+        var mesh = new THREE.Mesh(this.avatar.geometry, this.avatar.material);
+        this.finalizeGraphics(mesh);
+        return;
+    }
+
     game.log("Loading skinned model " + modelurl);
     var loader = new THREE.JSONLoader();
     loader.load(modelurl,
         function(geometry, materials) {
-            // TODO: var material = new THREE.MeshFaceMaterial(materials[0]);
+            //var material = new THREE.MeshFaceMaterial(materials);
             var material = new THREE.MeshPhongMaterial({
                 color: 0x664422,
                 specular: 0x009900,
@@ -364,6 +433,9 @@ Entity.prototype.loadAnimatedModel = function(modelurl) {
             });
             var mesh = new THREE.SkinnedMesh(geometry, material, false);
             mesh.pose();
+
+            self.avatar.geometry = geometry;
+            self.avatar.material = material;
 
             self.finalizeGraphics(mesh);
 
@@ -393,12 +465,16 @@ Entity.prototype.moveGraphicsRelationsTo = function(mesh) {
         this.parent.graphics.remove(oldgraphics);
         this.parent.graphics.add(this.graphics);
     }
+
 };
 
 Entity.prototype.setMeshProperties = function(mesh, props) {
     mesh.name = props.name;
     props.geometry = mesh.geometry;
     props.material = mesh.material;
+
+    mesh.position.copy(this.graphics.position);
+    mesh.rotation.copy(this.graphics.rotation);
 
     if(Entity.hasComponent(props)) {
         if(Entity.hasComponent(props.scale)) {
@@ -433,7 +509,8 @@ Entity.prototype.finalizeGraphics = function(mesh) {
         this.collisionMesh = this.graphics;
     }
 
-    if(Entity.hasComponent(this.avatar) && this.avatar.type == "flyer") {
+    if(Entity.hasComponent(this.ai) &&
+        (this.ai.type == "flyer" || this.ai.type == "projectile")) {
         game.scene.add(this.feet);
     }
 
@@ -461,38 +538,33 @@ Entity.prototype.updateInput = function(delta) {
         return;
     }
 
-    var avatar = this.avatar;
-
-    if(avatar.type == "walker") {
+    if(this.ai.type == "walker") {
         this.handleWalk();
     }
-    else if(avatar.type == "flyer") {
+    else if(this.ai.type == "flyer") {
         this.handleFly();
     }
-    else if(avatar.type == "projectile") {
-        this.handleProjectile();
-    }
     else {
-        game.log("Unknown avatar type: ", avatar.type);
+        game.log("Unknown avatar type: ", this.ai.type, this);
     }
 
     this.handleActions();
 };
 
-Entity.prototype.handleActions = function() {
+Entity.prototype.handleActions = function(delta) {
     var controls = this.player.controls;
     var graphics = this.graphics;
 
     if(Input.keys[controls.primary]) {
         if(this.items.length > 0) {
-            this.fire(this.items[0]);
+            this.fire(this.items[0], delta);
         }
 
         graphics.material.color.setHex(0x00FF00);
     }
     else if(Input.keys[controls.secondary]) {
         if(this.items.length > 1) {
-            this.fire(this.items[1]);
+            this.fire(this.items[1], delta);
         }
 
         graphics.material.color.setHex(0x0000FF);
@@ -502,7 +574,7 @@ Entity.prototype.handleActions = function() {
     }
 };
 
-Entity.prototype.fire = function(slot) {
+Entity.prototype.fire = function(slot, delta) {
     var item = slot.item;
 
     if(game.time - slot.lastFired >
@@ -515,7 +587,7 @@ Entity.prototype.fire = function(slot) {
                 this.fireGun(slot);
                 break;
             case "projectile":
-                this.fireProjectile(slot);
+                this.fireProjectile(slot, delta);
                 break;
             case "special":
                 this.fireSpecial(slot);
@@ -549,17 +621,17 @@ Entity.prototype.fireGun = function(slot) {
         console.log(intersects[0]);
         slot.shot.position.copy(intersects[0].point);
         slot.shot.lookAt(intersects[0].face.normal);
-        game.log("hits the ground", slot.shot);
+        game.log("shot hits the ground", slot.shot);
     }
     else {
         slot.shot.lookAt(direction.add(slot.shot.position));
-        game.log("nocollision", slot.shot);
+        game.log("no shot collision", slot.shot);
     }
 };
 
-Entity.prototype.fireProjectile = function(slot) {
+Entity.prototype.fireProjectile = function(slot, delta) {
     game.log("Firing: ", slot.item.name);
-    game.createProjectile(slot);
+    game.createProjectile(slot, delta);
 };
 
 Entity.prototype.fireSpecial = function(slot) {
@@ -580,14 +652,32 @@ Entity.prototype.fireLaser = function(slot) {
 Entity.prototype.handleProjectile = function(delta) {
     var graphics = this.graphics;
 
-    Entity.vector = this.getForward().multiplyScalar(this.item.speed);
+/*
+    var position = this.graphics.position;
+    var oldposition = this.physics.oldPosition;
+    var olddelta = this.physics.oldDelta;
+
+    if(this.physics.gravity) {
+        // var accel = this.item.gravity * Entity.gravity;
+        // TODO: Impact of gravity - physics!
+    }
+    // Verlet ingerator with varying time step
+//    newpos = position + (position - oldposition) * delta/olddelta +
+ //       accel * delta * (delta + olddelta) / 2;
+
+    // TODO: Set face towards acceleration
+
+    this.physics.oldPosition = uop;
+    this.physics.oldDelta = uop;
+*/
+
+    // Euler intergrator with zero acceleration : x1 = x + v * t + g
+    Entity.vector = this.ai.owner.getForward().multiplyScalar(this.ai.speed);
+    if(this.physics.gravity) {
+        Entity.vector.add(Entity.gravity);
+    }
     graphics.position.add(Entity.vector);
 
-    if(Entity.hasComponent(this.item)) {
-        if(Entity.hasComponent(this.item.gravity)) {
-            var accel = this.item.gravity;
-        }
-    }
 /*
     Entity.quaternion.setFromAxisAngle(Entity.up, avatar.turn);
     Entity.quaternion.multiplyQuaternions(graphics.quaternion,
@@ -601,26 +691,26 @@ Entity.prototype.handleFly = function(delta) {
     var graphics = this.graphics;
     var avatar = this.avatar;
 
-    Entity.vector = this.getForward().multiplyScalar(avatar.speed);
+    Entity.vector = this.getForward().multiplyScalar(this.ai.speed);
 
     if(Input.keys[controls.up]) {
-        Entity.vector.y += avatar.speed;
+        Entity.vector.y += this.ai.speed;
     }
     if(Input.keys[controls.down]) {
-        Entity.vector.y -= avatar.speed;
+        Entity.vector.y -= this.ai.speed;
     }
 
     graphics.position.add(Entity.vector);
 
 
     if(Input.keys[controls.left]) {
-        Entity.quaternion.setFromAxisAngle(Entity.up, avatar.turn);
+        Entity.quaternion.setFromAxisAngle(Entity.up, this.ai.turn);
         Entity.quaternion.multiplyQuaternions(graphics.quaternion,
             Entity.quaternion);
         graphics.setRotationFromQuaternion(Entity.quaternion);
     }
     if(Input.keys[controls.right]) {
-        Entity.quaternion.setFromAxisAngle(Entity.up, -avatar.turn);
+        Entity.quaternion.setFromAxisAngle(Entity.up, -this.ai.turn);
         Entity.quaternion.multiplyQuaternions(graphics.quaternion,
             Entity.quaternion);
         graphics.setRotationFromQuaternion(Entity.quaternion);
@@ -633,20 +723,20 @@ Entity.prototype.handleWalk = function(delta) {
     var avatar = this.avatar;
 
     if(Input.keys[controls.up]) {
-        graphics.position.add(this.getForward().multiplyScalar(avatar.speed));
+        graphics.position.add(this.getForward().multiplyScalar(this.ai.speed));
     }
     if(Input.keys[controls.down]) {
-        graphics.position.add(this.getForward().multiplyScalar(-avatar.speed));
+        graphics.position.add(this.getForward().multiplyScalar(-this.ai.speed));
     }
 
     if(Input.keys[controls.left]) {
-        Entity.quaternion.setFromAxisAngle(Entity.up, avatar.turn);
+        Entity.quaternion.setFromAxisAngle(Entity.up, this.ai.turn);
         Entity.quaternion.multiplyQuaternions(graphics.quaternion,
             Entity.quaternion);
         graphics.setRotationFromQuaternion(Entity.quaternion);
     }
     if(Input.keys[controls.right]) {
-        Entity.quaternion.setFromAxisAngle(Entity.up, -avatar.turn);
+        Entity.quaternion.setFromAxisAngle(Entity.up, -this.ai.turn);
         Entity.quaternion.multiplyQuaternions(graphics.quaternion,
             Entity.quaternion);
         graphics.setRotationFromQuaternion(Entity.quaternion);
@@ -657,9 +747,55 @@ Entity.prototype.handleWalk = function(delta) {
 /** Physics system **/
 
 
-Entity.prototype.updatePhysics = function(delta, terrain) {
+Entity.prototype.updatePhysics = function(delta, terrain, players) {
+    var intersects = [];
     if(Entity.hasComponent(this.player)) {
-        this.considerSurface(delta, terrain);
+        intersects = this.considerSurface(delta, terrain);
+        this.handleIntersects(intersects);
+    }
+
+    if(Entity.hasComponent(this.avatar) &&
+            this.ai.type == "projectile") {
+        this.handleProjectile();
+        intersects = this.considerSurface(delta, terrain);
+// TODO:        intersects = this.considerPlayer(delta, terrain);
+        this.handleIntersects(intersects);
+    }
+};
+
+Entity.prototype.handleIntersects = function(intersects) {
+    if(intersects.length > 0) {
+        var closest = intersects[0];
+        this.feet.position.copy(closest.point);
+        if(this.ai.type == "walker") {
+            this.graphics.position.y = this.feet.position.y +
+                game.config.feet_end_height;
+
+            // Rotate up from surface normal
+            Entity.quaternion.setFromUnitVectors(closest.face.normal,
+                Entity.up);
+            Entity.quaternion.multiplyQuaternions(Entity.quaternion,
+                this.graphics.quaternion);
+            //TODO: this.graphics.setRotationFromQuaternion(Entity.quaternion);
+
+        }
+        else {
+            if(closest.distance - game.config.feet_start_height <
+                this.graphics.geometry.boundingSphere.radius) {
+                // TODO: Handle collision with ground!
+                if(this.ai.type == "projectile") {
+                    game.log("exploded!");
+                    this.ai.type = "exploded";
+                }
+
+                game.log("player exploded!");
+                this.graphics.material.color.setHex(0xFF00FF);
+            }
+        }
+    }
+    else {
+        game.log("misses the ground");
+        this.graphics.position.set(0, 0, 0);
     }
 };
 
@@ -667,32 +803,10 @@ Entity.prototype.considerSurface = function(delta, terrain) {
     var surface = terrain.graphics;
 
     Entity.vector.setFromMatrixPosition(this.graphics.matrixWorld);
-    Entity.vector.y += game.config.feet_height;
+    Entity.vector.y += game.config.feet_start_height;
     Entity.ray.set(Entity.vector, Entity.gravity);
 
-    var intersects = Entity.ray.intersectObject(surface);
-    if(intersects.length > 0) {
-        var closest = intersects[0];
-        this.feet.position.copy(closest.point);
-        if(this.avatar.type == "walker") {
-            this.graphics.position.y = closest.point.y;
-
-            Entity.quaternion.setFromUnitVectors(closest.face.normal, Entity.up);
-            Entity.quaternion.multiplyQuaternions(Entity.quaternion, this.graphics.quaternion);
-            //this.graphics.setRotationFromQuaternion(Entity.quaternion);
-
-        }
-        else {
-            if(closest.distance - game.config.feet_height <
-                this.graphics.geometry.boundingSphere.radius) {
-                // TODO: Handle collision with ground!
-                game.log("Hits the ground!", closest.distance);
-            }
-        }
-    }
-    else {
-        game.log("misses the ground", Entity.ray.origin, Entity.ray.direction);
-    }
+    return Entity.ray.intersectObject(surface);
 };
 
 
@@ -748,10 +862,13 @@ Entity.prototype.getForward = function() {
 var Eto = function() {
     this.CONFIG = ETO_CONFIG_DEFAULT;
 
-    this.characters = [];
+    this.maps = [];
+    this.players = [];
+
+    this.characters = {};
     this.items = {};
     this.projectiles = [];
-    this.players = [];
+
     this.field = null;
 
     this.camera = null;
@@ -759,6 +876,7 @@ var Eto = function() {
     this.renderer = null;
 
     this.isRunning = false;
+    this.resetRequested = false;
 
     this.clock = new THREE.Clock();
     this.frameTime = 0;
@@ -860,8 +978,8 @@ Eto.prototype.createMusic = function(map) {
     // TODO: Remove all songs in the list
 
     for(var song in map.music) {
-        $("#soundtracks").append($("<option />").
-            val(map.music[song].src).html(map.music[song].title));
+        this.selectAppendValue("#soundtracks",
+            map.music[song].src, map.music[song].title);
     }
 
     if(map.music.length > 0) {
@@ -870,8 +988,22 @@ Eto.prototype.createMusic = function(map) {
 };
 
 Eto.prototype.selectSong = function(src) {
-    // TODO: What if type changes? Someone might use OGG?
-    $("#musicplayer").find("#musicsource").attr("src", src);
+    var type = null;
+
+    for(var index in this.config.music_types) {
+        suffix = this.config.music_types[index].suffix;
+        if(src.indexOf(suffix, src.length - suffix.length) !== -1) {
+            type = this.config.music_types[index].type;
+            break;
+        }
+    }
+    if(!type) {
+        this.error("Unrecognized media type: ", src);
+        return;
+    }
+
+    $("#musicplayer").src(src);
+    $("#musicplayer").type(type);
 };
 
 
@@ -894,7 +1026,7 @@ Eto.prototype.start = function() {
     this.isRunning = true;
     this.isPaused = false;
     this.clock.start();
-    this.animate();
+    this.gameLoop();
 };
 
 Eto.prototype.stop = function() {
@@ -916,12 +1048,18 @@ Eto.prototype.togglePause = function() {
     }
 };
 
-Eto.prototype.animate = function() {
+Eto.prototype.gameLoop = function() {
+    if(this.resetRequested) {
+        this.log("TODO: RESET REQUESTED!");
+        this.resetRequested = false;
+        return;
+    }
+
     if(!this.isRunning) {
         return;
     }
 
-    requestAnimationFrame(this.animate.bind(this));
+    requestAnimationFrame(this.gameLoop.bind(this));
 
     this.update();
 
@@ -954,6 +1092,10 @@ Eto.prototype.updateAnimation = function(delta) {
         this.players[i].updateAnimation(delta);
     }
 
+    for(i = 0; i < this.projectiles.length; ++i) {
+        this.projectiles[i].updateAnimation(delta, this.field);
+    }
+
     THREE.AnimationHandler.update(delta);
 };
 
@@ -978,13 +1120,33 @@ Eto.prototype.updateCamera = function(delta) {
 //    this.camera.lookAt(this.cameraTarget);
 };
 
+Eto.prototype.loadMaps = function(list) {
+    for(var index in list) {
+        var name = list[index].name;
+        this.maps[name] = list[index];
+        this.selectAppendValue("#maps", index, name);
+    }
+};
+
+Eto.prototype.loadCharacters = function(list) {
+    for(var index in list) {
+        var name = list[index].name;
+        this.characters[name] = list[index];
+
+        this.selectAppendValue("#p1chars", index, name);
+        this.selectAppendValue("#p2chars", index, name);
+    }
+};
+
 
 Eto.prototype.loadEntities = function(list) {
     var self = this;
     var counter = list.slice(0);
 
     var successfun = function(data) {
-        self.characters = self.characters.concat(data.characters);
+        self.loadMaps(data.maps);
+
+        self.loadCharacters(data.characters);
 
         for(var item in data.items) {
             self.items[item] = data.items[item];
@@ -1040,18 +1202,19 @@ Eto.prototype.initGame = function() {
 };
 
 Eto.prototype.randomizeMap = function() {
-    var index = Math.floor(Math.random() * this.CONFIG.maps.length);
-    return this.CONFIG.maps[index];
+    var keys = Object.keys(this.maps);
+    var index = Math.floor(Math.random() * keys.length);
+    return this.maps[keys[index]];
 };
 
 Eto.prototype.randomizeCharacter = function() {
-    var index = Math.floor(Math.random() * this.characters.length);
-    return this.characters[5];
+    var keys = Object.keys(this.characters);
+    var index = Math.floor(Math.random() * keys.length);
+    return this.characters[keys[index]];
 };
 
 Eto.prototype.createPlayer = function(index) {
-    this.players[index] = new Entity(this.master);
-    var player = this.players[index];
+    var player = new Entity(this.master);
     player.setAvatar(this.randomizeCharacter());
     player.setPlayer(this.CONFIG.players[index]);
     player.avatar.name = "player";
@@ -1059,6 +1222,8 @@ Eto.prototype.createPlayer = function(index) {
     player.loadData(this.dataPath(""), true);
 
     this.loadItems(player);
+
+    return player;
 };
 
 Eto.prototype.loadItems = function(player) {
@@ -1073,11 +1238,15 @@ Eto.prototype.loadItems = function(player) {
 };
 
 
-Eto.prototype.createProjectile = function(item) {
+Eto.prototype.createProjectile = function(item, delta) {
     var projectile = new Entity(this.master);
-    projectile.setAvatar(item.item);
-    projectile.setProjectile(item.item);
+    console.log("Item: ", item);
+    projectile.setAvatar(item.item.projectile);
+    projectile.setProjectile(item.item.projectile);
     projectile.loadData(this.dataPath(""), false);
+    projectile.fireProjectileFrom(item, delta);
+
+    console.log("Creates projectile:", projectile);
     this.projectiles.push(projectile);
 };
 
@@ -1099,13 +1268,48 @@ Eto.prototype.error = function(message) {
 };
 
 
+Eto.prototype.requestReset = function() {
+    this.resetRequested = true;
+};
 
-Eto.prototype.entitiesLoaded = function() {
+Eto.prototype.reset = function() {
+    clearField();
+    createGame();
+};
+
+Eto.prototype.clearField = function() {
+// remove projectiles, players from scene
+    this.players = [];
+    this.projectiles = [];
+};
+
+Eto.prototype.createGame = function() {
+    this.field = this.createField(this.randomizeMap());
+
     for(var i = 0; i < this.CONFIG.playercount; ++i) {
-        this.createPlayer(i);
+        this.players.push(this.createPlayer(i));
     }
 
     this.start();
+};
+
+Eto.prototype.entitiesLoaded = function() {
+    this.clearField();
+
+    this.createGame();
+};
+
+Eto.prototype.selectAppendValue = function(selector, val, title) {
+    $(selector).append($("<option />").
+        val(val).html(title));
+};
+
+
+Eto.prototype.setPlayerStrength = function(event) {
+    var playerindex = event.data;
+    var strvalue = $(this).val();
+    this.log("TODO: set player ", playerindex, " hp+pwr to reflect value ",
+        strvalue);
 };
 
 Eto.prototype.toggleMenu = function() {
@@ -1127,11 +1331,9 @@ Eto.prototype.init = function() {
     this.camera = this.createCamera();
     this.scene = this.createScene();
 
-    this.field = this.createField(this.randomizeMap());
-
 
     // Container events
-    $(window).on("resize", this.onWindowResize.bind(this), false);
+    $(window).on("resize", this.onWindowResize.bind(this));
 
 
     // Input events
@@ -1142,14 +1344,18 @@ Eto.prototype.init = function() {
 
     // Game controls events
 
+    $("#p1strength").on("change", this.setPlayerStrength.bind(this), 0);
+    $("#p2strength").on("change", this.setPlayerStrength.bind(this), 1);
+
+    $("#reset").on("click", this.requestReset.bind(this));
 
     // Audio controls events
 
-    $("#soundtracks").on("change", function(event) {
-        game.selectSong($("#soundtracks").val());
-    });
-
     if(this.config.play_music) {
+        $("#soundtracks").on("change", function(event) {
+            game.selectSong($("#soundtracks").val());
+        });
+
         this.createMusic(field);
     }
 
