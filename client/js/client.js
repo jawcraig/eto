@@ -222,6 +222,21 @@ Entity.prototype.startUpdate = function(delta) {
             Entity.hasComponent(this.physics)) {
         this.physics.oldPosition.copy(this.graphics.position);
     }
+
+    if(Entity.hasComponent(this.player)) {
+        if(this.ai.health <= 0) {
+            playerDies();
+        }
+
+        return this.ai.alive;
+    }
+
+    if(Entity.hasComponent(this.projectile)) {
+        return this.ai.alive;
+    }
+
+    game.error("startUpdate called for unknown entity" + this);
+    return false; // Not alive
 };
 
 Entity.prototype.setAvatar = function(avatar) {
@@ -233,6 +248,7 @@ Entity.prototype.setProjectile = function(item) {
 
     this.ai = {
         type: "projectile",
+        alive: true,
         speed: this.item.speed * game.config.projectile_speed,
         turn: this.item.turn * game.config.projectile_turn_speed
     };
@@ -260,11 +276,21 @@ Entity.prototype.setProjectile = function(item) {
 };
 
 Entity.prototype.setPlayer = function(player) {
-    this.health = 0;
-
     this.player = player;
 
-    this.ai = {type: this.avatar.type};
+    if(!Entity.hasComponent(this.player.kills)) {
+        this.player.kills = 0;
+    }
+    if(!Entity.hasComponent(this.player.deaths)) {
+        this.player.deaths = 0;
+    }
+
+    this.ai = {
+        type: this.avatar.type,
+        alive: true,
+        health: player.strength * player.health
+    };
+
     if(this.ai.type == "flyer") {
         this.ai.speed = this.avatar.speed * game.config.fly_speed;
         this.ai.turn = this.avatar.turn * game.config.fly_turn_speed;
@@ -280,7 +306,9 @@ Entity.prototype.setPlayer = function(player) {
 };
 
 Entity.prototype.setItem = function(item) {
-    this.lastFired = 0;
+    this.ai = {
+        lastFired: 0
+    };
 
     this.item = item;
 
@@ -354,17 +382,17 @@ Entity.prototype.loadData = function(path, animated) {
 
         if(animated) {
             game.log("loadAnimated:", this, this.avatar.name);
-            this.loadAnimatedModel(path + this.avatar.model);
+            this.loadAnimatedModel(path, path + this.avatar.model);
         }
         else {
             game.log("loadModel:", this, this.avatar.name);
-            this.loadModel(path + this.avatar.model);
+            this.loadModel(path, path + this.avatar.model);
         }
     }
 
     if(Entity.hasComponent(this.avatar.collision)) {
         game.log("load collision model:", this.avatar.name);
-        this.loadCollisionModel(path + this.avatar.collision);
+        this.loadCollisionModel(path, path + this.avatar.collision);
     }
 };
 
@@ -378,7 +406,7 @@ Entity.prototype.getPlaceHolder = function() {
     return mesh;
 };
 
-Entity.prototype.loadCollisionModel = function(modelurl) {
+Entity.prototype.loadCollisionModel = function(path, modelurl) {
     var self = this;
 
     game.log("Loading collision model " + modelurl);
@@ -392,7 +420,8 @@ Entity.prototype.loadCollisionModel = function(modelurl) {
         }
     );
 };
-Entity.prototype.loadModel = function(modelurl) {
+
+Entity.prototype.loadModel = function(path, modelurl) {
     var self = this;
 
     if(Entity.hasComponent(this.avatar.geometry) &&
@@ -407,13 +436,7 @@ Entity.prototype.loadModel = function(modelurl) {
     var loader = new THREE.JSONLoader();
     loader.load(modelurl,
         function(geometry, materials) {
-            //var material = new THREE.MeshFaceMaterial(materials);
-            var material = new THREE.MeshPhongMaterial({
-                color: 0x224422,
-                specular: 0x225522,
-                shininess: 10,
-                shading: THREE.FlatShading
-            });
+            var material = this.loadMaterial(path, geometry, materials);
             var mesh = new THREE.Mesh(geometry, material);
 
             self.avatar.geometry = geometry;
@@ -424,13 +447,26 @@ Entity.prototype.loadModel = function(modelurl) {
     );
 };
 
-Entity.prototype.loadAnimatedModel = function(modelurl) {
+Entity.prototype.loadMaterial = function(path, geometry, materials) {
+    // TODO: var material = new THREE.MeshFaceMaterial(materials);
+    var material = new THREE.MeshPhongMaterial({
+        color: 0x224422,
+        specular: 0x225522,
+        shininess: 10,
+        shading: THREE.FlatShading
+    });
+
+    return material;
+};
+
+Entity.prototype.loadAnimatedModel = function(path, modelurl) {
     var self = this;
 
     if(Entity.hasComponent(this.avatar.geometry) &&
             Entity.hasComponent(this.avatar.material)) {
         game.log("Using cached skinned model");
-        var mesh = new THREE.Mesh(this.avatar.geometry, this.avatar.material);
+        var mesh = new THREE.SkinnedMesh(this.avatar.geometry,
+            this.avatar.material);
         this.finalizeGraphics(mesh);
         return;
     }
@@ -439,13 +475,7 @@ Entity.prototype.loadAnimatedModel = function(modelurl) {
     var loader = new THREE.JSONLoader();
     loader.load(modelurl,
         function(geometry, materials) {
-            //var material = new THREE.MeshFaceMaterial(materials);
-            var material = new THREE.MeshPhongMaterial({
-                color: 0x664422,
-                specular: 0x009900,
-                shininess: 30,
-                shading: THREE.FlatShading
-            });
+            var material = loadSkinnedMaterial(path, geometry, materials);
             var mesh = new THREE.SkinnedMesh(geometry, material, false);
             mesh.pose();
 
@@ -460,13 +490,33 @@ Entity.prototype.loadAnimatedModel = function(modelurl) {
                 self.avatar.animation = new THREE.Animation(mesh,
                     geometry.animations[0]);
                 self.avatar.animation.play(0);
+                // self.avatars.animations.fire = animations[fire_animation]
+                // self.avatars.animations.move = animations[move_animation]
+                // self.avatars.animations.die = animations[die_animation]
+                // self.avatars.animations.hop = animations[scramble_animation]
+                // self.avatars.animations.attack = animations[melee_animation]
+                // self.avatars.animations.jump = animations[jump_animation]
+                // self.avatars.animations.cheer = animations[cheer_animation]
             }
         }
     );
 };
 
+Entity.prototy.loadSkinnedMaterial = function(path, geometry, materials) {
+    //TODO: var material = new THREE.MeshFaceMaterial(materials);
+    // TODO: enableSkinned
+    var material = new THREE.MeshPhongMaterial({
+        color: 0x664422,
+        specular: 0x009900,
+        shininess: 30,
+        shading: THREE.FlatShading
+    });
+
+    return material;
+};
+
 Entity.prototype.moveGraphicsRelationsTo = function(mesh) {
-    // TODO: Mishandles bones in skinned mesh!
+    // TODO: BUG: Mishandles bones in skinned mesh? moves children to another!
 
     var oldgraphics = this.graphics;
     this.graphics = mesh;
@@ -480,7 +530,6 @@ Entity.prototype.moveGraphicsRelationsTo = function(mesh) {
         this.parent.graphics.remove(oldgraphics);
         this.parent.graphics.add(this.graphics);
     }
-
 };
 
 Entity.prototype.setMeshProperties = function(mesh, props) {
@@ -508,6 +557,12 @@ Entity.prototype.setMeshProperties = function(mesh, props) {
 
     mesh.geometry.computeBoundingSphere();
     mesh.geometry.computeBoundingBox();
+};
+
+Entity.prototype.removeGraphics = function() {
+    if(Entity.hasComponent(this.parent.graphics)) {
+        this.parent.graphics.remove(this.graphics);
+    }
 };
 
 Entity.prototype.finalizeGraphics = function(mesh) {
@@ -591,10 +646,10 @@ Entity.prototype.handleActions = function(delta) {
 Entity.prototype.fire = function(slot, delta) {
     var item = slot.item;
 
-    if(game.time - slot.lastFired >
+    if(game.time - slot.ai.lastFired >
             game.config.item_cooldown * item.cooldown) {
 
-        slot.lastFired = game.time;
+        slot.ai.lastFired = game.time;
 
         switch(item.type) {
             case "gun":
@@ -618,6 +673,10 @@ Entity.prototype.fire = function(slot, delta) {
     }
 };
 
+Entity.prototype.getCollisionMesh = function() {
+    return this.collisionMesh;
+};
+
 Entity.prototype.fireGun = function(slot) {
     game.log("Firing: ", slot.item.name);
 
@@ -627,8 +686,7 @@ Entity.prototype.fireGun = function(slot) {
     Entity.ray.set(slot.shot.position, direction);
     game.log(slot.shot.position, direction);
 
-    // TODO: Use collisionMesh! <- global getter to this?
-    var surface = game.field.collisionMesh;
+    var sufrace = game.field.getCollisionMesh();
 
     var intersects = Entity.ray.intersectObject(surface);
     if(intersects.length > 0) {
@@ -774,12 +832,12 @@ Entity.prototype.updatePhysics = function(delta, terrain, players) {
             this.ai.type == "projectile") {
         this.handleProjectile();
         intersects = this.considerSurface(delta, terrain);
-// TODO:        intersects = this.considerPlayer(delta, terrain);
-        this.handleIntersects(intersects);
+// TODO: player interactions intersects = this.considerPlayer(delta, terrain);
+        this.handleGroundIntersects(intersects);
     }
 };
 
-Entity.prototype.handleIntersects = function(intersects) {
+Entity.prototype.handleGroundIntersects = function(intersects) {
     if(intersects.length > 0) {
         var closest = intersects[0];
         this.feet.position.copy(closest.point);
@@ -796,24 +854,48 @@ Entity.prototype.handleIntersects = function(intersects) {
 
         }
         else {
+            // Not a walker
             if(closest.distance - game.config.feet_start_height <
                 this.graphics.geometry.boundingSphere.radius) {
-                // TODO: Handle collision with ground!
+                // TODO: Handle collision with ground more accurately!
                 if(this.ai.type == "projectile") {
-                    game.log("exploded!");
-                    this.ai.type = "exploded";
+                    this.projectileHitsGround();
                 }
 
-                // TODO: For some reason this is called sometimes for walkers
-                game.log("player hits the ground and exploded!");
-                this.graphics.material.color.setHex(0xFF00FF);
+                playerHitsGround();
             }
         }
     }
     else {
         game.log("misses the ground");
-        this.graphics.position.set(0, 0, 0);
+        if(Entity.hasComponent(this.player)) {
+            this.playerDies();
+        }
+        else {
+            this.graphics.position.set(0, 0, 0);
+        }
     }
+};
+
+Entity.prototype.playerHitsGround = function() {
+    // TODO: Sometimes called for non-flyers?
+    game.assert(Entity.hasComponent(this.player) && this.ai.type == "flyer",
+        "playerHitsGround called for a non-flyer " + this);
+
+    game.log("player hits the ground and exploded!");
+    this.playerDies();
+};
+
+Entity.prototype.projectileHitsGround = function() {
+    game.log("projectileHitsGround!");
+    this.ai.type = "exploded";
+    this.ai.alive = false;
+};
+
+Entity.prototype.playerDies = function() {
+    this.ai.type = "dead";
+    this.ai.alive = false;
+    this.graphics.material.color.setHex(0xFF00FF);
 };
 
 Entity.prototype.considerSurface = function(delta, terrain) {
@@ -897,6 +979,9 @@ var Eto = function() {
 
     this.clock = new THREE.Clock();
     this.frameTime = 0;
+
+    this.frameCounter = 0;
+    this.averageFps = 0;
 };
 
 Object.defineProperty(Eto.prototype, "time", {
@@ -995,7 +1080,7 @@ Eto.prototype.createMusic = function(map) {
     // TODO: Remove all songs in the list
 
     for(var song in map.music) {
-        this.selectAppendValue("#soundtracks",
+        this.appendOptionToSelect("#soundtracks",
             map.music[song].src, map.music[song].title);
     }
 
@@ -1083,6 +1168,17 @@ Eto.prototype.gameLoop = function() {
     this.renderer.render(this.scene, this.camera);
 };
 
+// TODO: Remove globals!
+Eto.prototype.updateFps = function(fps) {
+    frameCounter++;
+    averageFps += (fps - averageFps) / frameCounter;
+    if(frameCount == 240) {
+        this.showFps(fps);
+        frameCounter = 0;
+        averageFps = 0;
+    }
+};
+
 Eto.prototype.update = function() {
     var delta = this.clock.getDelta();
 
@@ -1090,6 +1186,9 @@ Eto.prototype.update = function() {
         return;
     }
 
+    this.updateFps(1/delta);
+
+    // TODO: Limit updates to 10-20/s or somesuch -> better fps?
     this.startUpdate(delta);
 
     this.updateInput(delta);
@@ -1101,14 +1200,23 @@ Eto.prototype.update = function() {
 Eto.prototype.startUpdate = function(delta) {
     this.frameTime += delta;
 
-    for(var i = 0; i < this.players.length; ++i) {
-        this.players[i].startUpdate(delta);
+    var i = this.players.length;
+    while(--i) {
+        var player = this.players[i];
+        if(!player.startUpdate(delta) && !player.ai.alive) {
+            this.playerDied(i);
+        }
     } 
 
-    for(i = 0; i < this.projectiles.length; ++i) {
-        this.projectiles[i].startUpdate(delta);
+    i = this.projectiles.length;
+    while(--i) {
+        var projectile = this.projectiles[i];
+        if(projectile.startUpdate(delta) && !projectile.ai.alive) {
+            projectileDied(i);
+        }
     }
 };
+
 
 Eto.prototype.updateInput = function(delta) {
     for(var i = 0; i < this.players.length; ++i) {
@@ -1153,7 +1261,7 @@ Eto.prototype.loadMaps = function(list) {
     for(var index in list) {
         var name = list[index].name;
         this.maps[name] = list[index];
-        this.selectAppendValue("#maps", index, name);
+        this.appendOptionToSelect("#maps", index, name);
     }
 };
 
@@ -1162,8 +1270,8 @@ Eto.prototype.loadCharacters = function(list) {
         var name = list[index].name;
         this.characters[name] = list[index];
 
-        this.selectAppendValue("#p1chars", index, name);
-        this.selectAppendValue("#p2chars", index, name);
+        this.appendOptionToSelect("#p1chars", index, name);
+        this.appendOptionToSelect("#p2chars", index, name);
     }
 };
 
@@ -1225,35 +1333,50 @@ Eto.prototype.closeConnections = function() {
     this.connection.close();
 };
 
-Eto.prototype.initGame = function() {
-    game.log("config", this.CONFIG);
-    this.loadEntities(this.CONFIG.entities);
-};
-
 Eto.prototype.randomizeMap = function() {
     var keys = Object.keys(this.maps);
     var index = Math.floor(Math.random() * keys.length);
     return this.maps[keys[index]];
 };
 
-Eto.prototype.randomizeCharacter = function() {
+Eto.prototype.randomizeCharacter = function(player) {
+    game.log("Randomized character. TODO: Use value from selector!");
     var keys = Object.keys(this.characters);
     var index = Math.floor(Math.random() * keys.length);
     return this.characters[keys[index]];
 };
 
-Eto.prototype.createPlayer = function(index) {
-    var player = new Entity(this.master);
-    player.setAvatar(this.randomizeCharacter());
+Eto.prototype.randomizePosition = function(player) {
+    game.log("Randomized position. TODO: Use actual random field position!");
+    player.graphics.position.set(0, 0, 0);
+};
+
+
+Eto.prototype.incarnatePlayer = function(index) {
+    player.setAvatar(this.randomizeCharacter(index));
     player.setPlayer(this.CONFIG.players[index]);
     player.avatar.name = "player";
-    player.title = "player" + index;
     player.loadData(this.dataPath(""), true);
 
     this.loadItems(player);
 
+    randomizePosition(player);
+};
+
+Eto.prototype.createPlayer = function(index) {
+    var player = new Entity(this.master);
+
+    this.incarnatePlayer(player);
+
     return player;
 };
+
+Eto.prototype.playerDied = function(index) {
+    game.log("Player " + index + " died!");
+    var player = this.players[index];
+    incarnatePlayer(player);
+};
+
 
 Eto.prototype.loadItems = function(player) {
     player.items = [];
@@ -1261,6 +1384,7 @@ Eto.prototype.loadItems = function(player) {
         var item = new Entity(player);
         item.setAvatar(player.avatar.items[i]);
         item.setItem(this.items[item.avatar.name]);
+
         item.loadData(this.dataPath(""), false);
         player.items.push(item);
     }
@@ -1269,16 +1393,27 @@ Eto.prototype.loadItems = function(player) {
 
 Eto.prototype.createProjectile = function(item, delta) {
     var projectile = new Entity(this.master);
-    game.log("Item: ", item);
     projectile.setAvatar(item.item.projectile);
     projectile.setProjectile(item.item.projectile);
+
     projectile.loadData(this.dataPath(""), false);
     projectile.fireProjectileFrom(item, delta);
 
-    game.log("Creates projectile:", projectile);
+    game.log("Item:", item, " creates projectile:", projectile);
     this.projectiles.push(projectile);
 };
 
+Eto.prototype.projectileDied = function(index) {
+    game.log("Projectile " + index + " died!");
+
+    var projectile = this.projectiles[i];
+
+    projectile.removeGraphics();
+    this.projectiles.splice(i, 1);
+};
+
+
+/* Utility functions */
 
 Eto.prototype.dataPath = function(file) {
     return this.CONFIG.basepath + this.CONFIG.datapath + file;
@@ -1296,14 +1431,22 @@ Eto.prototype.error = function(message) {
     }
 };
 
+Eto.prototype.assert = function(test, message) {
+    if(!test) {
+        this.error(message);
+    }
+};
+
+
+/* Game progress */
 
 Eto.prototype.requestReset = function() {
     this.resetRequested = true;
 };
 
 Eto.prototype.reset = function() {
-    clearField();
-    createGame();
+    this.clearField();
+    this.createGame();
 };
 
 Eto.prototype.clearField = function() {
@@ -1328,7 +1471,10 @@ Eto.prototype.entitiesLoaded = function() {
     this.createGame();
 };
 
-Eto.prototype.selectAppendValue = function(selector, val, title) {
+
+/* Gui options */
+
+Eto.prototype.appendOptionToSelect = function(selector, val, title) {
     $(selector).append($("<option />").
         val(val).html(title));
 };
@@ -1339,6 +1485,14 @@ Eto.prototype.setPlayerStrength = function(event) {
     var strvalue = $(this).val();
     this.log("TODO: set player ", playerindex, " hp+pwr to reflect value ",
         strvalue);
+};
+
+
+Eto.prototype.showPlayerHealth = function(index, health) {
+};
+
+Eto.prototype.showFps = function(fps) {
+    $("#fpscounter").text(fps.toFixed(2));
 };
 
 Eto.prototype.toggleMenu = function() {
@@ -1356,8 +1510,9 @@ Eto.prototype.setGui = function() {
 
     // Game controls events
 
-    // TODO: Not a function
+    // TODO: FIXME: Never called
     $("#p1strength").on("change", this.setPlayerStrength.bind(this), 0);
+    // TODO: FIXME: Not a function
     $("#p2strength").on("change", this.setPlayerStrength.bind(this), 1);
 
     $("#reset").on("click", this.requestReset.bind(this));
@@ -1377,6 +1532,13 @@ Eto.prototype.setGui = function() {
     $("#disconnect").on("click",
         function() { game.error("DISCO!"); });
 };
+
+
+Eto.prototype.initGame = function() {
+    game.log("config", this.CONFIG);
+    this.loadEntities(this.CONFIG.entities);
+};
+
 
 Eto.prototype.init = function() {
     this.renderer = this.createRenderer();
