@@ -37,7 +37,15 @@
         {
             "name": "arachnid", "type": "walker", "model": "arachnid.json",
             "speed": 2, "turn": 2, "health": 30,
-            "items": [{"name":"missiles"}, {"name":"melee"}]
+            "items": [
+                {
+                    "name":"missiles",
+                    "position": {"x": 0, "y": 10, "z": 0}
+                },
+                {
+                    "name":"melee"
+                }
+            ]
         },
 
         {
@@ -77,7 +85,7 @@
             "ammo": 1,
             "damage": 100,
             "cooldown": 1,
-            "range": 100
+            "splash": 20
         },
         "melee":{
             "type": "special",
@@ -140,7 +148,7 @@
                 "damage": 10,
                 "splash": 10,
                 "acceleration": 10,
-                "speed": 20,
+                "speed": 50,
                 "range": 500
             }
         },

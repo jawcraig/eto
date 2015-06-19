@@ -23,7 +23,7 @@
 
                     <div class="content">
                         <p>
-                        <label for="p1strength">Player 1 power</label>
+                        <label for="p0strength">Player 1 power</label>
                         Handicap <input id="p1strength" type="range"
                             min="0" max="100" value="50"> Max
                         </p>
@@ -33,13 +33,13 @@
                             min="0" max="100" value="50"> Max
                         </p>
                         <p>
-                        <label for="p1chars">P1 critter:</label>
-                        <select id="p1chars" list="p1charlist">
+                        <label for="p0chars">P1 critter:</label>
+                        <select id="p0chars">
                             <option value="" selected> Random </option>
                         </select>
                         <p>
-                        <label for="p2chars">P2 critter:</label>
-                        <select id="p2chars" list="p2charlist">
+                        <label for="p1chars">P2 critter:</label>
+                        <select id="p1chars">
                             <option value="" selected> Random </option>
                         </select>
                         </p>
@@ -96,6 +96,45 @@
                 <div class="tab">
                     <input type="radio" id="tab3" name="tabgroup1">
                     <label class="tablabel" for="tab3">
+                        <span class="nonselectable">Controls</span>
+                    </label>
+
+                    <div class="content">
+                        <table id="playercontrols">
+                            <tr>
+                                <th>+</th> <th>Player 1</th><th>Player 2</th>
+                            </tr>
+                            <tr class="tooltip" tip="Move Forward/Up">
+                                <td>Up</td>
+                                <td id="cp0up"/><td id="cp1up"/>
+                            </tr>
+                            <tr class="tooltip" tip="Move Back/Down">
+                                <td>Down</td>
+                                <td id="cp0down"/><td id="cp1down"/>
+                            </tr>
+                            <tr class="tooltip" tip="Turn left">
+                                <td>Left</td>
+                                <td id="cp0left"/><td id="cp1left"/>
+                            </tr>
+                            <tr class="tooltip" tip="Turn right">
+                                <td>Right</td>
+                                <td id="cp0right"/><td id="cp1right"/>
+                            </tr>
+                            <tr class="tooltip" tip="Primary fire">
+                                <td>Fire 1</td>
+                                <td id="cp0pri"/><td id="cp1pri"/>
+                            </tr>
+                            <tr class="tooltip" tip="Secondary fire">
+                                <td>Fire 2</td>
+                                <td id="cp0sec"/><td id="cp1sec"/>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab">
+                    <input type="radio" id="tab4" name="tabgroup1">
+                    <label class="tablabel" for="tab4">
                         <span class="nonselectable">Network</span>
                     </label>
 
@@ -105,8 +144,8 @@
                 </div>
 
                 <div class="tab">
-                    <input type="radio" id="tab4" name="tabgroup1">
-                    <label class="tablabel" for="tab4">
+                    <input type="radio" id="tab5" name="tabgroup1">
+                    <label class="tablabel" for="tab5">
                         <span class="nonselectable">Stats</span>
                     </label>
 
