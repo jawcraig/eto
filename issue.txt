@@ -1,0 +1,10 @@
+.LOG
+
+23:22 18.6.2015
+New round button: keys no longer respond
+weapon & projectile orientations
+kills / deaths
+new entity type: explosion
+what happens to missiles in flight when the owner dies?
+skinning
+animation

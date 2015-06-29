@@ -14,6 +14,15 @@ var ETO_CONFIG_DEFAULT = {
     menu_key: 27,
 
 
+    renderer_params: {
+        precision: THREE.highp,
+        alpha: true,
+        antialias: true
+        // ShadowMapEnabled: false
+        // ShadowMapType: PCFSoftShadowMap
+        // ShadowMapCascade: true
+    },
+
     camera_fov: 75,
     camera_near: 1,
     camera_far: 1000,
@@ -47,7 +56,10 @@ var ETO_CONFIG_DEFAULT = {
     projectile_turn_speed: 0.3,
     explosion_size: 1,
 
-    item_cooldown: 1
+    item_cooldown: 1,
+    autoaim: 2 * Math.PI / 360,
+
+    player_start_health: 50
 };
 
 
@@ -110,26 +122,31 @@ Audio.prototype.setVolume = function(volume) {
     this.masterGain.gain.value = volume;
 };
 
-Audio.prototype.loadSound = function(url) {
-// TODO: Implement this using $.ajax (JQuery still buggy)
+var Sound = function(buffer) {
+    this.buffer = buffer;
+};
 
+Audio.prototype.loadSound = function(file) {
+// TODO: Implement this using $.ajax (JQuery still buggy?)
+
+    var url = game.dataPath(file);
     game.log("Loading audio:", url);
 
     var request = new XMLHttpRequest();
     request.open("GET", url, true);
     request.responseType = "arraybuffer";
 
-    var sound = {
-        buffer: null
-    };
+    var sound = new Sound(null);
+    var self = this;
 
     request.onload = function() {
-        this.audio.decodeAudioData(
+        self.context.decodeAudioData(
             request.response,
 
             function(buffer) {
                 // Complete
                 sound.buffer = buffer;
+                game.log("***Hey!", buffer);
             },
 
             function() {
@@ -138,6 +155,8 @@ Audio.prototype.loadSound = function(url) {
             }
         );
     };
+
+    request.send();
 
     return sound;
 };
@@ -163,13 +182,13 @@ Audio.prototype.updateListenerPosition = function(camera) {
         Entity.vector.y, Entity.vector.z);
 };
 
-Audio.prototype.playSound = function(source, buffer, destination, time) {
-    if(typeof buffer === "undefined" || !buffer) {
+Audio.prototype.playSound = function(buffer, source, destination, time) {
+    if(typeof buffer === "undefined" || buffer === null) {
         game.error("Audio: trying to play empty buffer");
         return;
     }
 
-    if(typeof source === "undefined" || !source) {
+    if(typeof source === "undefined" || source === null) {
         game.log("Audio: Empty source given, creating a new one");
         source = this.context.createBufferSource();
     }
@@ -177,7 +196,7 @@ Audio.prototype.playSound = function(source, buffer, destination, time) {
     source.buffer = buffer;
     source.connect(this.getDestination());
 
-    if(typeof time !== "undefined") {
+    if(typeof time !== "undefined" && time !== null) {
         source.start(time);
     }
     else {
@@ -238,6 +257,13 @@ Entity.prototype.startUpdate = function(delta) {
         return this.ai.alive;
     }
 
+    if(Entity.hasComponent(this.ai) &&
+        Entity.hasComponent(this.ai.explosionstart) &&
+        Entity.hasComponent(this.ai.alive)) {
+
+        return this.ai.alive;
+    }
+
     game.log("startUpdate called for unknown entity", this);
     return false; // Not alive
 };
@@ -291,7 +317,7 @@ Entity.prototype.setPlayer = function(player) {
     this.ai = {
         type: this.avatar.type,
         alive: true,
-        health: player.strength * player.health
+        health: player.strength * game.config.player_start_health
     };
 
     if(this.ai.type == "flyer") {
@@ -361,51 +387,103 @@ Entity.prototype.fireProjectileFrom = function(entity, delta) {
     // Could also substract: acceleration0 * delta * delta;
 };
 
-Entity.prototype.setExplosion = function(center, item) {
+Entity.prototype.createParticles = function(center, radius) {
+    var geometry = new THREE.Geometry();
+    geometry.vertices.push(new THREE.Vector3(0, 0.1, 0));
+    geometry.vertices.push(new THREE.Vector3(1, 1, 1));
+    geometry.vertices.push(new THREE.Vector3(2, 2, -1.5));
+    geometry.vertices.push(new THREE.Vector3(0, 3, 2));
+
+    var texture = THREE.ImageUtils.loadTexture("data/sprite.png");
+
+    var material = new THREE.PointCloudMaterial( {
+        size: radius,
+        map: texture,
+        transparent: true
+    });
+
+    var explosion = new THREE.PointCloud(geometry, material);
+    explosion.position.copy(center);
+
+    return explosion;
+};
+
+Entity.prototype.createBubble = function(center, radius) {
+    var material = new THREE.MeshBasicMaterial({
+        color: 0xff3300,
+        transparent: true,
+        opacity: 0.5});
+
+    var geometry = new THREE.SphereGeometry(radius, 16, 16);
+
+    var explosion = new THREE.Mesh(geometry, material);
+    explosion.position.copy(center);
+
+    return explosion;
+};
+
+Entity.prototype.setExplosion = function(center, owner, item) {
     // TODO: Effect class
+
     this.ai = {
-        radius: game.config.explosion_size
+        alive: true,
+        radius: game.config.explosion_size,
+        explosionstart: game.time,
+        owner: owner,
+        damage: item.damage
     };
 
     if(Entity.hasComponent(item.splash)) {
         this.ai.radius *= item.splash;
     }
 
-    var material = new THREE.MeshBasicMaterial({
-        color: 0xff3300,
-        transparent: true,
-        opacity: 0.5});
+    var explosion = this.createParticles(center, this.ai.radius);
+    this.graphics = explosion;
+    this.parent.graphics.add(this.graphics);
+//    var bubble = this.createBubble(center, this.ai.radius);
+//    this.parent.graphics.add(bubble);
 
-    var geometry = new THREE.SphereGeometry(this.ai.radius, 32, 32);
+    // TODO: Place this to... somewhere else? ai update phase? 
+    this.explodePlayers();
+};
 
-    var explosion = new THREE.Mesh(geometry, material);
-    explosion.position.copy(center);
+Entity.prototype.explosionHitsObject = function(object) {
+    if(this.graphics.position.distanceTo(object.position) <
+        object.geometry.boundingSphere.radius + this.ai.radius) {
 
-    this.parent.graphics.add(explosion);
+        return true;
+    }
 
-/* TODO: considerPlayers
+    return false;
+};
+
+Entity.prototype.explodePlayers = function() {
     for(var index in game.players) {
         var player = game.players[index];
-        var results = this.considerObject(player.getCollisionMesh());
-        if(results !== null) {
-            game.log("explosion ", this, " hits player: ", player.player.index);
-            player.damagePlayer(this.item.damage, this.owner);
+        var hits = this.explosionHitsObject(player.getCollisionMesh());
+        if(hits) {
+            game.log("explosion ", this, " hits player: ", player);
+            player.damagePlayer(this.ai.damage, this.ai.owner);
             // TODO: Consider range & throw player in air
         }
     }
-*/
+};
+
+Entity.prototype.killExplosion = function() {
+    this.removeGraphics();
 };
 
 Entity.prototype.explodeProjectile = function(delta) {
     game.log("exploding", this);
 
-    game.createExplosion(this.graphics.position, this.item);
+    game.createExplosion(this.graphics.position, this.ai.owner, this.item);
 
     this.removeGraphics();
 };
 
 
 Entity.prototype.damagePlayer = function(damage, owner) {
+    console.log("player hit with damage", damage, owner);
     this.ai.health -= damage;
 
     if(this.ai.alive && this.ai.health <= 0) {
@@ -418,7 +496,8 @@ Entity.prototype.damagePlayer = function(damage, owner) {
 /** GRAPHICS system **/
 
 
-Entity.prototype.loadData = function(path, animated) {
+Entity.prototype.loadData = function(animated) {
+    animated = animated || false;
     // Load Scripts
 
     // Load Audio
@@ -460,17 +539,17 @@ Entity.prototype.loadData = function(path, animated) {
 
         if(animated) {
             game.log("loadAnimated:", this, this.avatar.name);
-            this.loadAnimatedModel(path, path + this.avatar.model);
+            this.loadAnimatedModel(this.avatar.model);
         }
         else {
             game.log("loadModel:", this, this.avatar.name);
-            this.loadModel(path, path + this.avatar.model);
+            this.loadModel(this.avatar.model);
         }
     }
 
     if(Entity.hasComponent(this.avatar.collision)) {
         game.log("load collision model:", this.avatar.name);
-        this.loadCollisionModel(path, path + this.avatar.collision);
+        this.loadCollisionModel(this.avatar.collision);
     }
 };
 
@@ -484,12 +563,12 @@ Entity.prototype.getPlaceHolder = function() {
     return mesh;
 };
 
-Entity.prototype.loadCollisionModel = function(path, modelurl) {
+Entity.prototype.loadCollisionModel = function(modelurl) {
     var self = this;
 
     game.log("Loading collision model " + modelurl);
     var loader = new THREE.JSONLoader();
-    loader.load(modelurl,
+    loader.load(game.dataPath(modelurl),
         function(geometry, materials) {
             var material = new THREE.MeshBasicMaterial({color: 0xff0000});
             var mesh = new THREE.Mesh(geometry, material);
@@ -499,14 +578,14 @@ Entity.prototype.loadCollisionModel = function(path, modelurl) {
     );
 };
 
-Entity.prototype.loadModel = function(path, modelurl) {
+Entity.prototype.loadModel = function(modelurl) {
     var self = this;
 
     game.log("Loading model " + modelurl);
     var loader = new THREE.JSONLoader();
-    loader.load(modelurl,
+    loader.load(game.dataPath(modelurl),
         function(geometry, materials) {
-            var material = self.loadMaterial(path, geometry, materials);
+            var material = self.loadMaterial(geometry, materials);
             var mesh = new THREE.Mesh(geometry, material);
 
             self.avatar.geometry = geometry;
@@ -517,7 +596,7 @@ Entity.prototype.loadModel = function(path, modelurl) {
     );
 };
 
-Entity.prototype.loadMaterial = function(path, geometry, materials) {
+Entity.prototype.loadMaterial = function(geometry, materials) {
     // TODO: var material = new THREE.MeshFaceMaterial(materials);
     var material = new THREE.MeshPhongMaterial({
         color: 0x224422,
@@ -529,14 +608,14 @@ Entity.prototype.loadMaterial = function(path, geometry, materials) {
     return material;
 };
 
-Entity.prototype.loadAnimatedModel = function(path, modelurl) {
+Entity.prototype.loadAnimatedModel = function(modelurl) {
     var self = this;
 
     game.log("Loading skinned model " + modelurl);
     var loader = new THREE.JSONLoader();
-    loader.load(modelurl,
+    loader.load(game.dataPath(modelurl),
         function(geometry, materials) {
-            var material = self.loadSkinnedMaterial(path, geometry, materials);
+            var material = self.loadSkinnedMaterial(geometry, materials);
             var mesh = new THREE.SkinnedMesh(geometry, material, false);
             mesh.pose();
 
@@ -564,7 +643,7 @@ Entity.prototype.loadAnimatedModel = function(path, modelurl) {
     );
 };
 
-Entity.prototype.loadSkinnedMaterial = function(path, geometry, materials) {
+Entity.prototype.loadSkinnedMaterial = function(geometry, materials) {
     //TODO: var material = new THREE.MeshFaceMaterial(materials);
     // TODO: enableSkinned
     var material = new THREE.MeshPhongMaterial({
@@ -625,6 +704,9 @@ Entity.prototype.setMeshProperties = function(mesh, props) {
 Entity.prototype.removeGraphics = function() {
     if(Entity.hasComponent(this.parent.graphics)) {
         this.parent.graphics.remove(this.graphics);
+    }
+    if(Entity.hasComponent(this.feet)) {
+        this.parent.graphics.remove(this.feet);
     }
 };
 
@@ -724,7 +806,8 @@ Entity.prototype.fire = function(slot, delta) {
                 this.fireProjectile(slot, delta);
                 break;
             case "special":
-                game.createExplosion(this.graphics.position, slot);
+                game.createExplosion(this.graphics.position,
+                    slot.ai.owner, slot);
                 this.fireSpecial(slot);
                 break;
             case "particle":
@@ -760,22 +843,25 @@ Entity.prototype.getTargetPlayer = function() {
 };
 
 Entity.prototype.getCollisionMesh = function() {
+    return this.graphics;
+
+    // TODO: Use separate mesh
     if(Entity.hasComponent(this.collisionMesh)) {
         return this.collisionMesh;
     }
-
-    return this.graphics;
 };
 
 Entity.prototype.fireGun = function(slot) {
-    game.log("Firing: ", slot.item.name);
-
     slot.shot.position.setFromMatrixPosition(slot.graphics.matrixWorld);
+    var origin = slot.shot.position;
     var direction = slot.getForward();
+    // TODO: Perturb by accuracy * randomvector
+    //var theta = acos(game.random());
+    //var phi = 2 * pi * game.random();
 
-    Entity.ray.set(slot.shot.position, direction);
-    game.scene.add(new THREE.ArrowHelper(direction, slot.shot.position,
-        100, 0xf0f0f0));
+    Entity.ray.set(origin, direction);
+    //game.scene.add(new THREE.ArrowHelper(direction, origin,
+    //    100, 0xf0f0f0));
 
     this.shootPlayers(slot);
 
@@ -783,32 +869,30 @@ Entity.prototype.fireGun = function(slot) {
 };
 
 Entity.prototype.shootPlayers = function(slot) {
-    game.log(Entity.ray.ray);
     for(var index in game.players) {
         var player = game.players[index]; 
+    // TODO: Autoaim accuracy cone
         var results = Entity.ray.intersectObject(player.getCollisionMesh());
         if(results.length > 0) {
             game.log("shot ", slot, " hits player: ", player);
-            player.damagePlayer(slot.item.damage, this.owner);
+            player.damagePlayer(slot.item.damage, this.ai.owner);
             // TODO: Consider range & throw player in air
         }
     }
 };
 
 Entity.prototype.shootGround = function(slot) {
-    game.log(Entity.ray.ray);
     var surface = game.field.getCollisionMesh();
     var intersects = Entity.ray.intersectObject(surface);
 
     if(intersects.length > 0) {
-        game.log(intersects[0]);
         slot.shot.position.copy(intersects[0].point);
         slot.shot.lookAt(intersects[0].face.normal);
-        game.log("shot hits the ground", slot.shot);
+        game.createExplosion(intersects[0].point, slot.ai.owner, slot.item);
     }
     else {
         slot.shot.lookAt(Entity.ray.ray.direction.add(slot.shot.position));
-        game.log("no shot collision", slot.shot);
+        game.createExplosion(slot.shot.position, slot.ai.owner, slot.item);
     }
 };
 
@@ -821,7 +905,7 @@ Entity.prototype.fireSpecial = function(slot) {
     game.log("Firing: ", slot.item.name);
 
     if(slot.item.name == "selfdestruct") {
-        this.createExplosion(slot.item);
+        this.createExplosion(this, slot.item);
         this.alive = false;
         return;
     }
@@ -1026,12 +1110,11 @@ Entity.prototype.projectileHitsGround = function() {
 };
 
 Entity.prototype.playerDies = function() {
-//    this.ai.type = "dead";
     this.ai.alive = false;
+    game.createExplosion(this.graphics.position, game.items["selfdestruct"],
+       this);
     this.graphics.position.set(0, 100, 0);
     this.graphics.material.color.setHex(0xFF00FF);
-
-    game.createExplosion(this.graphics.position, game.items["selfdestruct"]);
 };
 
 Entity.prototype.considerObject = function(delta, object) {
@@ -1068,7 +1151,7 @@ Entity.prototype.considerObject = function(delta, object) {
 
 Entity.prototype.considerSurface = function(delta, terrain) {
     // TODO: Notice movement through!
-    var surface = terrain.graphics;
+    var surface = terrain.getCollisionMesh();
 
     Entity.vector.setFromMatrixPosition(this.graphics.matrixWorld);
     Entity.vector.y += game.config.feet_start_height;
@@ -1088,6 +1171,15 @@ Entity.prototype.updateAnimation = function(delta) {
             this.animateModel(graphics, delta);
         }
     }
+
+    if(Entity.hasComponent(this.ai) &&
+        Entity.hasComponent(this.ai.explosionstart)) {
+
+        this.graphics.scale.y *= 1.01;
+        if(game.time - this.ai.explosionstart > 5) {
+            this.ai.alive = false;
+        }
+    };
 };
 
 Entity.prototype.animateModel = function(delta) {
@@ -1236,7 +1328,8 @@ Eto.prototype.createField = function(map) {
     var field = new Entity(this.master);
     game.log("Loading map: ", map);
     field.setAvatar(map);
-    field.loadData(this.dataPath(""), false);
+    field.loadData();
+    field.graphics.geometry.computeBoundingBox();
 
     return field;
 };
@@ -1282,7 +1375,7 @@ Eto.prototype.selectSong = function(src) {
 
 
 Eto.prototype.createRenderer = function() {
-    var renderer = new THREE.WebGLRenderer();
+    var renderer = new THREE.WebGLRenderer(this.config.renderer_params);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     return renderer;
@@ -1387,6 +1480,16 @@ Eto.prototype.startUpdate = function(delta) {
             this.projectileDied(i, delta);
         }
     }
+
+    i = this.explosions.length;
+    while(i-- > 0) {
+        var explosion = this.explosions[i];
+        explosion.startUpdate(delta);
+
+        if(!explosion.ai.alive) {
+            this.explosionDied(i, delta);
+        }
+    }
 };
 
 
@@ -1405,6 +1508,9 @@ Eto.prototype.updateAnimation = function(delta) {
         this.projectiles[i].updateAnimation(delta, this.field);
     }
 
+    for(i = 0; i < this.explosions.length; ++i) {
+        this.explosions[i].updateAnimation(delta, this.field);
+    }
     THREE.AnimationHandler.update(delta);
 };
 
@@ -1507,8 +1613,9 @@ Eto.prototype.closeConnections = function() {
 
 Eto.prototype.randomizeMap = function() {
     var keys = Object.keys(this.maps);
-    var index = Math.floor(Math.random() * keys.length);
-    return this.maps[keys[index]];
+    var index = Math.floor(this.random() * keys.length);
+// TODO: FIXME: BUG:    return this.maps[keys[index]];
+    return this.maps[keys[1]];
 };
 
 Eto.prototype.randomizeCharacter = function(index) {
@@ -1535,7 +1642,7 @@ Eto.prototype.incarnatePlayer = function(player, index) {
     player.setAvatar(this.randomizeCharacter(index));
     player.setPlayer(this.CONFIG.players[index]);
     player.avatar.name = "player";
-    player.loadData(this.dataPath(""), true);
+    player.loadData(true);
 
     this.loadItems(player);
 
@@ -1572,7 +1679,7 @@ Eto.prototype.loadItems = function(player) {
         item.setAvatar(player.avatar.items[i]);
         item.setItem(this.items[item.avatar.name]);
 
-        item.loadData(this.dataPath(""), false);
+        item.loadData();
         player.items.push(item);
     }
 };
@@ -1583,7 +1690,7 @@ Eto.prototype.createProjectile = function(item, delta) {
     projectile.setAvatar(item.item.projectile);
     projectile.setProjectile(item.item.projectile);
 
-    projectile.loadData(this.dataPath(""), false);
+    projectile.loadData();
     projectile.fireProjectileFrom(item, delta);
 
     game.log("Item:", item, " creates projectile:", projectile);
@@ -1600,10 +1707,19 @@ Eto.prototype.projectileDied = function(index, delta) {
     this.projectiles.splice(index, 1);
 };
 
+Eto.prototype.explosionDied = function(index, delta) {
+    game.log("Explosion " + index + " died!");
 
-Eto.prototype.createExplosion = function(center, item) {
+    var explosion = this.explosions[index];
+
+    explosion.killExplosion();
+
+    this.explosions.splice(index, 1);
+};
+
+Eto.prototype.createExplosion = function(center, owner, item) {
     var explosion = new Entity(this.master);
-    explosion.setExplosion(center, item);
+    explosion.setExplosion(center, owner, item);
     this.explosions.push(explosion);
 };
 
@@ -1611,6 +1727,10 @@ Eto.prototype.createExplosion = function(center, item) {
 
 Eto.prototype.dataPath = function(file) {
     return this.CONFIG.basepath + this.CONFIG.datapath + file;
+};
+
+Eto.prototype.random = function() {
+    return Math.random();
 };
 
 Eto.prototype.log = ETO_CONFIG_DEFAULT.DEBUG ?
@@ -1741,7 +1861,11 @@ Eto.prototype.setGui = function() {
     // Network controls events
 
     $("#disconnect").on("click",
-        function() { game.error("DISCO!"); });
+        function() {
+            game.audio.playSound(bello.buffer);
+            game.error("DISCO!");
+        }
+    );
 };
 
 
@@ -1751,6 +1875,7 @@ Eto.prototype.initGame = function() {
 };
 
 
+var bello = null;
 Eto.prototype.init = function() {
     this.renderer = this.createRenderer();
     var container = document.getElementById("container");
@@ -1760,6 +1885,8 @@ Eto.prototype.init = function() {
     this.connections = this.createConnections();
 
     this.audio = this.createAudio();
+
+    bello = this.audio.loadSound("recycle.wav");
 
     this.camera = this.createCamera();
     this.scene = this.createScene();
