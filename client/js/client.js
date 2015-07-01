@@ -10,6 +10,9 @@ var ETO_CONFIG_DEFAULT = {
     basepath: "",
     datapath: "data/",
 
+    cache_textures: true,
+    cache_sounds: true,
+
 
     menu_key: 27,
 
@@ -102,6 +105,205 @@ var Input = {
 };
 
 
+/** Resource manager **/
+
+var ResourceManager = {
+    emptyGeometry: new THREE.BoxGeometry(3, 3, 3, 2, 2, 2),
+    emptyMaterial: new THREE.MeshBasicMaterial({color:0x0000FF}),
+    textureCache: {},
+    soundCache: {},
+
+    dataPath: function(file) {
+        return game.config.basepath + game.config.datapath + file;
+    },
+
+    getPlaceHolder: function() {
+        var mesh = new THREE.SkinnedMesh(this.emptyGeometry,
+            this.emptyMaterial, false);
+        mesh.geometry.computeBoundingSphere();
+        mesh.geometry.computeBoundingBox();
+        mesh.name = "placeholder";
+        return mesh;
+    },
+
+    loadingError: function(url, status, error) {
+        game.error("Error while loading " + url + ": " + status +
+            " - " + error);
+    },
+
+    loadConfiguration: function(game) {
+        var url = game.config.basepath + game.config.configuration_file;
+        $.ajax({
+            url: url,
+            cache: !game.config.DEBUG,
+            dataType: "json",
+            success: function(data) {
+                for(var setting in data) {
+                    game.config[setting] = data[setting];
+                }
+            },
+            error: function(hr, status, error) {
+                ResourceManager.loadingError(url, status, error);
+            },
+            complete: function() {
+                game.init();
+            }
+        });
+    },
+
+    loadEntities: function(list, successfun, completefun) {
+        var errorfun = function(hr, status, error) {
+            ResourceManager.loadingError(url, status, error);
+        };
+
+        while(list.length) {
+            var url = ResourceManager.dataPath(list.pop());
+
+            $.ajax({
+                cache: !game.config.DEBUG,
+                url: url,
+                dataType: "json",
+                success: successfun,
+                error: errorfun,
+                complete: completefun
+            });
+        }
+    },
+
+    loadSound: function(file, audio) {
+        if(game.config.cache_sounds && file in ResourceLoader.soundCache) {
+            return ResourceLoader.soundCache[file];
+        }
+
+    // TODO: Implement this using $.ajax (JQuery still buggy?)
+
+        var url = ResourceManager.dataPath(file);
+        game.log("Loading audio:", url);
+
+        var request = new XMLHttpRequest();
+        request.open("GET", url, true);
+        request.responseType = "arraybuffer";
+
+        var sound = audio.createSound();
+
+        request.onload = function() {
+            audio.decodeAudio(sound, request.response);
+        };
+
+        request.send();
+
+        if(game.config.cache_sounds) {
+            ResourceLoader.soundCache[file] = sound;
+        }
+
+        return sound;
+    },
+
+    loadTexture: function(textureurl) {
+        if(textureurl in ResourceManager.textureCache) {
+            return ResourceManager.textureCache[textureurl];
+        }
+
+        var url = ResourceManager.dataPath(textureurl);
+
+        var texture = THREE.ImageUtils.loadTexture(url);
+
+        if(game.config.cache_textures) {
+            ResourceManager.textureCache[textureurl] = texture;
+        }
+
+        return texture;
+    },
+
+    loadCollisionModel: function(entity, modelurl) {
+        var self = entity;
+
+        game.log("Loading collision model " + modelurl);
+        var loader = new THREE.JSONLoader();
+        loader.load(ResourceManager.dataPath(modelurl),
+            function(geometry, materials) {
+                var material = new THREE.MeshBasicMaterial({color: 0xff0000});
+                var mesh = new THREE.Mesh(geometry, material);
+                self.setMeshProperties(mesh, self.avatar);
+                self.collisionMesh = mesh;
+            }
+        );
+    },
+
+    loadModel: function(entity, modelurl) {
+        var self = entity;
+
+        game.log("Loading model " + modelurl);
+        var loader = new THREE.JSONLoader();
+        loader.load(ResourceManager.dataPath(modelurl),
+            function(geometry, materials) {
+                var material = ResourceManager.loadMaterial(geometry, materials);
+                var mesh = new THREE.Mesh(geometry, material);
+
+                self.avatar.geometry = geometry;
+                self.avatar.material = material;
+
+                self.finalizeGraphics(mesh);
+            }
+        );
+    },
+
+    loadMaterial: function(geometry, materials) {
+        // TODO: var material = new THREE.MeshFaceMaterial(materials);
+        var material = new THREE.MeshPhongMaterial({
+            color: 0x224422,
+            specular: 0x225522,
+            shininess: 10,
+            shading: THREE.FlatShading
+        });
+
+        return material;
+    },
+
+    loadAnimatedModel: function(entity, modelurl) {
+        var self = entity;
+
+        game.log("Loading skinned model " + modelurl);
+        var loader = new THREE.JSONLoader();
+        loader.load(ResourceManager.dataPath(modelurl),
+            function(geometry, materials) {
+                var material =
+                    ResourceManager.loadSkinnedMaterial(geometry, materials);
+                var mesh = new THREE.SkinnedMesh(geometry, material, false);
+                mesh.pose();
+
+                self.avatar.geometry = geometry;
+                self.avatar.material = material;
+
+                self.finalizeGraphics(mesh);
+
+                if(Entity.hasComponent(geometry.animations) &&
+                        geometry.animations.length > 0) {
+
+                    self.avatar.animation = new THREE.Animation(mesh,
+                        geometry.animations[0]);
+                    self.avatar.animation.play(0);
+                    // self.avatar.animations = []
+                }
+            }
+        );
+    },
+
+    loadSkinnedMaterial: function(geometry, materials) {
+        //TODO: var material = new THREE.MeshFaceMaterial(materials);
+        // TODO: enableSkinned
+        var material = new THREE.MeshPhongMaterial({
+            color: 0x664422,
+            specular: 0x009900,
+            shininess: 30,
+            shading: THREE.FlatShading
+        });
+
+        return material;
+    }
+};
+
+
 /** Audio system **/
 
 
@@ -126,39 +328,21 @@ var Sound = function(buffer) {
     this.buffer = buffer;
 };
 
-Audio.prototype.loadSound = function(file) {
-// TODO: Implement this using $.ajax (JQuery still buggy?)
+Audio.prototype.decodeAudio = function(sound, data) {
+    this.context.decodeAudioData(
+        data,
 
-    var url = game.dataPath(file);
-    game.log("Loading audio:", url);
+        function(buffer) {
+            // Complete
+            sound.buffer = buffer;
+            game.log("Sound decoded!", buffer);
+        },
 
-    var request = new XMLHttpRequest();
-    request.open("GET", url, true);
-    request.responseType = "arraybuffer";
-
-    var sound = new Sound(null);
-    var self = this;
-
-    request.onload = function() {
-        self.context.decodeAudioData(
-            request.response,
-
-            function(buffer) {
-                // Complete
-                sound.buffer = buffer;
-                game.log("***Hey!", buffer);
-            },
-
-            function() {
-                // Error
-                game.error("Can't load " + url);
-            }
-        );
-    };
-
-    request.send();
-
-    return sound;
+        function() {
+            // Error
+            game.error("Can't decode " + url);
+        }
+    );
 };
 
 Audio.prototype.createPanner = function() {
@@ -182,7 +366,13 @@ Audio.prototype.updateListenerPosition = function(camera) {
         Entity.vector.y, Entity.vector.z);
 };
 
-Audio.prototype.playSound = function(buffer, source, destination, time) {
+Audio.prototype.createSound = function() {
+    return new Sound(null);
+};
+
+Audio.prototype.playSound = function(sound, source, destination, time) {
+    var buffer = sound.buffer;
+
     if(typeof buffer === "undefined" || buffer === null) {
         game.error("Audio: trying to play empty buffer");
         return;
@@ -394,9 +584,9 @@ Entity.prototype.createParticles = function(center, radius) {
     geometry.vertices.push(new THREE.Vector3(2, 2, -1.5));
     geometry.vertices.push(new THREE.Vector3(0, 3, 2));
 
-    var texture = THREE.ImageUtils.loadTexture("data/sprite.png");
+    var texture = ResourceManager.loadTexture("sprite.png");
 
-    var material = new THREE.PointCloudMaterial( {
+    var material = new THREE.PointCloudMaterial({
         size: radius,
         map: texture,
         transparent: true
@@ -412,7 +602,8 @@ Entity.prototype.createBubble = function(center, radius) {
     var material = new THREE.MeshBasicMaterial({
         color: 0xff3300,
         transparent: true,
-        opacity: 0.5});
+        opacity: 0.5
+    });
 
     var geometry = new THREE.SphereGeometry(radius, 16, 16);
 
@@ -512,7 +703,7 @@ Entity.prototype.loadData = function(animated) {
     // TODO: support .pack format, deduce skinning from the json contents
     if(Entity.hasComponent(this.avatar.model)) {
         if(!Entity.hasComponent(this.graphics)) {
-            this.graphics = this.getPlaceHolder();
+            this.graphics = ResourceManager.getPlaceHolder();
 
             if(Entity.hasComponent(this.avatar.geometry) &&
                     Entity.hasComponent(this.avatar.material)) {
@@ -539,122 +730,20 @@ Entity.prototype.loadData = function(animated) {
 
         if(animated) {
             game.log("loadAnimated:", this, this.avatar.name);
-            this.loadAnimatedModel(this.avatar.model);
+            ResourceManager.loadAnimatedModel(this, this.avatar.model);
         }
         else {
             game.log("loadModel:", this, this.avatar.name);
-            this.loadModel(this.avatar.model);
+            ResourceManager.loadModel(this, this.avatar.model);
         }
     }
 
     if(Entity.hasComponent(this.avatar.collision)) {
         game.log("load collision model:", this.avatar.name);
-        this.loadCollisionModel(this.avatar.collision);
+        ResourceManager.loadCollisionModel(this, this.avatar.collision);
     }
 };
 
-Entity.prototype.getPlaceHolder = function() {
-    var emptyGeometry = new THREE.BoxGeometry(3, 3, 3, 2, 2, 2);
-    var emptyMaterial = new THREE.MeshBasicMaterial({color:0x0000FF});
-    var mesh = new THREE.SkinnedMesh(emptyGeometry, emptyMaterial, false);
-    mesh.geometry.computeBoundingSphere();
-    mesh.geometry.computeBoundingBox();
-    mesh.name = "placeholder";
-    return mesh;
-};
-
-Entity.prototype.loadCollisionModel = function(modelurl) {
-    var self = this;
-
-    game.log("Loading collision model " + modelurl);
-    var loader = new THREE.JSONLoader();
-    loader.load(game.dataPath(modelurl),
-        function(geometry, materials) {
-            var material = new THREE.MeshBasicMaterial({color: 0xff0000});
-            var mesh = new THREE.Mesh(geometry, material);
-            self.setMeshProperties(mesh, self.avatar);
-            self.collisionMesh = mesh;
-        }
-    );
-};
-
-Entity.prototype.loadModel = function(modelurl) {
-    var self = this;
-
-    game.log("Loading model " + modelurl);
-    var loader = new THREE.JSONLoader();
-    loader.load(game.dataPath(modelurl),
-        function(geometry, materials) {
-            var material = self.loadMaterial(geometry, materials);
-            var mesh = new THREE.Mesh(geometry, material);
-
-            self.avatar.geometry = geometry;
-            self.avatar.material = material;
-
-            self.finalizeGraphics(mesh);
-        }
-    );
-};
-
-Entity.prototype.loadMaterial = function(geometry, materials) {
-    // TODO: var material = new THREE.MeshFaceMaterial(materials);
-    var material = new THREE.MeshPhongMaterial({
-        color: 0x224422,
-        specular: 0x225522,
-        shininess: 10,
-        shading: THREE.FlatShading
-    });
-
-    return material;
-};
-
-Entity.prototype.loadAnimatedModel = function(modelurl) {
-    var self = this;
-
-    game.log("Loading skinned model " + modelurl);
-    var loader = new THREE.JSONLoader();
-    loader.load(game.dataPath(modelurl),
-        function(geometry, materials) {
-            var material = self.loadSkinnedMaterial(geometry, materials);
-            var mesh = new THREE.SkinnedMesh(geometry, material, false);
-            mesh.pose();
-
-            self.avatar.geometry = geometry;
-            self.avatar.material = material;
-
-            self.finalizeGraphics(mesh);
-
-            if(Entity.hasComponent(geometry.animations) &&
-                    geometry.animations.length > 0) {
-
-                self.avatar.animation = new THREE.Animation(mesh,
-                    geometry.animations[0]);
-                self.avatar.animation.play(0);
-                // self.avatar.animations = []
-                // self.avatars.animations.fire = animations[fire_animation]
-                // self.avatars.animations.move = animations[move_animation]
-                // self.avatars.animations.die = animations[die_animation]
-                // self.avatars.animations.hop = animations[scramble_animation]
-                // self.avatars.animations.attack = animations[melee_animation]
-                // self.avatars.animations.jump = animations[jump_animation]
-                // self.avatars.animations.cheer = animations[cheer_animation]
-            }
-        }
-    );
-};
-
-Entity.prototype.loadSkinnedMaterial = function(geometry, materials) {
-    //TODO: var material = new THREE.MeshFaceMaterial(materials);
-    // TODO: enableSkinned
-    var material = new THREE.MeshPhongMaterial({
-        color: 0x664422,
-        specular: 0x009900,
-        shininess: 30,
-        shading: THREE.FlatShading
-    });
-
-    return material;
-};
 
 Entity.prototype.moveGraphicsRelationsTo = function(mesh) {
     // TODO: BUG: Mishandles bones in skinned mesh? moves children to another!
@@ -725,7 +814,7 @@ Entity.prototype.finalizeGraphics = function(mesh) {
         this.collisionMesh = this.graphics;
     }
 
-    if(Entity.hasComponent(this.ai) &&
+    if(Entity.hasComponent(this.ai) && Entity.hasComponent(this.ai.type) &&
         (this.ai.type == "flyer" || this.ai.type == "projectile")) {
         game.scene.add(this.feet);
     }
@@ -1179,7 +1268,7 @@ Entity.prototype.updateAnimation = function(delta) {
         if(game.time - this.ai.explosionstart > 5) {
             this.ai.alive = false;
         }
-    };
+    }
 };
 
 Entity.prototype.animateModel = function(delta) {
@@ -1258,23 +1347,23 @@ Object.defineProperty(Eto.prototype, "config", {
 
 Eto.prototype.initCamera = function(camera) {
     camera.position.set(
-        this.CONFIG.camera_position.x,
-        this.CONFIG.camera_position.y,
-        this.CONFIG.camera_position.z);
+        this.config.camera_position.x,
+        this.config.camera_position.y,
+        this.config.camera_position.z);
     camera.up = new THREE.Vector3(
-        this.CONFIG.camera_up.x,
-        this.CONFIG.camera_up.y,
-        this.CONFIG.camera_up.z);
+        this.config.camera_up.x,
+        this.config.camera_up.y,
+        this.config.camera_up.z);
     camera.lookAt(new THREE.Vector3(
-        this.CONFIG.camera_lookat.x,
-        this.CONFIG.camera_lookat.y,
-        this.CONFIG.camera_lookat.z));
+        this.config.camera_lookat.x,
+        this.config.camera_lookat.y,
+        this.config.camera_lookat.z));
 };
 
 Eto.prototype.createCamera = function() {
-    var camera = new THREE.PerspectiveCamera(this.CONFIG.camera_fov,
+    var camera = new THREE.PerspectiveCamera(this.config.camera_fov,
         window.innerWidth / window.innerHeight,
-        this.CONFIG.camera_near, this.CONFIG.camera_far);
+        this.config.camera_near, this.config.camera_far);
 
     this.initCamera(camera);
     return camera;
@@ -1304,8 +1393,8 @@ Eto.prototype.createScene = function() {
 };
 
 Eto.prototype.createSky = function() {
-    var geometry = new THREE.SphereGeometry(this.CONFIG.sky_size, 8, 8);
-    var material = new THREE.MeshBasicMaterial({color: this.CONFIG.sky_color});
+    var geometry = new THREE.SphereGeometry(this.config.sky_size, 8, 8);
+    var material = new THREE.MeshBasicMaterial({color: this.config.sky_color});
     material.side = THREE.DoubleSide;
     var sky = new THREE.Mesh(geometry, material);
     sky.name = "skysphere";
@@ -1553,45 +1642,33 @@ Eto.prototype.loadCharacters = function(list) {
     }
 };
 
+Eto.prototype.loadItems = function(items) {
+    for(var item in items) {
+        this.items[item] = items[item];
+        this.items[item].name = item;
+    }
+};
+
 
 Eto.prototype.loadEntities = function(list) {
-    var self = this;
     var counter = list.slice(0);
 
     var successfun = function(data) {
-        self.loadMaps(data.maps);
+        game.loadMaps(data.maps);
 
-        self.loadCharacters(data.characters);
+        game.loadCharacters(data.characters);
 
-        for(var item in data.items) {
-            self.items[item] = data.items[item];
-            self.items[item].name = item;
-        }
-    };
-
-    var errorfun = function(hr, status, error) {
-        game.error("Error while loading " + url + ": " + status +
-            " - " + error);
+        game.loadItems(data.items);
     };
 
     var completefun = function() {
         if(counter.length === 0) {
-            self.entitiesLoaded();
+            game.entitiesLoaded();
         }
     };
 
 
-    while(counter.length) {
-        var url = this.dataPath(counter.pop());
-        $.ajax({
-            cache: !this.config.DEBUG,
-            url: url,
-            dataType: "json",
-            success: successfun,
-            error: errorfun,
-            complete: completefun
-        });
-    }
+    ResourceManager.loadEntities(counter, successfun, completefun);
 };
 
 
@@ -1640,11 +1717,11 @@ Eto.prototype.randomizePosition = function(player) {
 
 Eto.prototype.incarnatePlayer = function(player, index) {
     player.setAvatar(this.randomizeCharacter(index));
-    player.setPlayer(this.CONFIG.players[index]);
+    player.setPlayer(this.config.players[index]);
     player.avatar.name = "player";
     player.loadData(true);
 
-    this.loadItems(player);
+    this.loadPlayerItems(player);
 
     this.randomizePosition(player);
 };
@@ -1666,15 +1743,14 @@ Eto.prototype.playerDied = function(index) {
     this.incarnatePlayer(player, index);
 };
 
-
-Eto.prototype.loadItems = function(player) {
+Eto.prototype.loadPlayerItems = function(player) {
     // Remove children.
     for(var i = 0; i < player.graphics.children.length; ++i) {
         player.graphics.remove(player.graphics.children[i]);
     }
     player.items = [];
 
-    for(var i = 0; i < player.avatar.items.length; ++i) {
+    for(i = 0; i < player.avatar.items.length; ++i) {
         var item = new Entity(player);
         item.setAvatar(player.avatar.items[i]);
         item.setItem(this.items[item.avatar.name]);
@@ -1725,10 +1801,6 @@ Eto.prototype.createExplosion = function(center, owner, item) {
 
 /* Utility functions */
 
-Eto.prototype.dataPath = function(file) {
-    return this.CONFIG.basepath + this.CONFIG.datapath + file;
-};
-
 Eto.prototype.random = function() {
     return Math.random();
 };
@@ -1777,7 +1849,7 @@ Eto.prototype.clearField = function() {
 Eto.prototype.createGame = function() {
     this.field = this.createField(this.randomizeMap());
 
-    for(var i = 0; i < this.CONFIG.playercount; ++i) {
+    for(var i = 0; i < this.config.playercount; ++i) {
         this.players.push(this.createPlayer(i));
     }
 
@@ -1862,7 +1934,7 @@ Eto.prototype.setGui = function() {
 
     $("#disconnect").on("click",
         function() {
-            game.audio.playSound(bello.buffer);
+            game.audio.playSound(bello);
             game.error("DISCO!");
         }
     );
@@ -1870,8 +1942,8 @@ Eto.prototype.setGui = function() {
 
 
 Eto.prototype.initGame = function() {
-    game.log("config", this.CONFIG);
-    this.loadEntities(this.CONFIG.entities);
+    game.log("config", this.config);
+    this.loadEntities(this.config.entities);
 };
 
 
@@ -1886,7 +1958,7 @@ Eto.prototype.init = function() {
 
     this.audio = this.createAudio();
 
-    bello = this.audio.loadSound("recycle.wav");
+    bello = ResourceManager.loadSound("recycle.wav", this.audio);
 
     this.camera = this.createCamera();
     this.scene = this.createScene();
@@ -1899,26 +1971,5 @@ Eto.prototype.init = function() {
     this.initGame();
 };
 
-function loadConfiguration(game) {
-    var url = game.config.basepath + game.config.configuration_file;
-    $.ajax({
-        url: url,
-        cache: !game.config.DEBUG,
-        dataType: "json",
-        success: function(data) {
-            for(var setting in data) {
-                game.config[setting] = data[setting];
-            }
-        },
-        error: function(hr, status, error) {
-            game.error("Error while loading " + url + ": " + status +
-                " - " + error);
-        },
-        complete: function() {
-            game.init();
-        }
-    });
-}
-
 var game = new Eto();
-loadConfiguration(game);
+ResourceManager.loadConfiguration(game);

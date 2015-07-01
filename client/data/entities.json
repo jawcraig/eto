@@ -19,7 +19,7 @@
             "name": "gray",
             "model": "gray.json",
             "collision": "terrain2.json",
-            "scale": {"x": 10, "y": 1, "z": 10},
+            "scale": {"x": 10, "y": 10, "z": 10},
             "position": {"x": 0, "y": -60, "z": 0},
             "music": [
                 {
