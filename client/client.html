@@ -24,22 +24,36 @@
 
                     <div class="content">
                         <p>
-                        <label for="p0strength">Player 1 power</label>
-                        Handicap <input id="p1strength" type="range"
-                            min="0" max="100" value="50"> Max
+                        <label for="p0name">Name:</label>
+                        <input id="p0name" placeholder="default...">
                         </p>
                         <p>
-                        <label for="p2strength">Player 2 power</label>
-                        Handicap <input id="p2strength" type="range"
-                            min="0" max="100" value="50"> Max
+                        <label for="p0strength">Power</label>
+                            Handicap
+                            <input id="p0strength" type="range"
+                            min="0" max="100" value="50">
+                            Max
                         </p>
                         <p>
-                        <label for="p0chars">P1 critter:</label>
+                        <label for="p0chars">Critter:</label>
                         <select id="p0chars">
                             <option value="" selected> Random </option>
                         </select>
+                        </p>
+
                         <p>
-                        <label for="p1chars">P2 critter:</label>
+                        <label for="p1name">Name:</label>
+                        <input id="p1name" placeholder="default...">
+                        </p>
+                        <p>
+                        <label for="p1strength">Power</label>
+                            Handicap
+                            <input id="p1strength" type="range"
+                            min="0" max="100" value="50">
+                            Max
+                        </p>
+                        <p>
+                        <label for="p1chars">Critter:</label>
                         <select id="p1chars">
                             <option value="" selected> Random </option>
                         </select>
@@ -166,25 +180,37 @@
         </div>
 
         <div id="score">
-            <div id="player1">
-                P1:
+            <div id="player0">
+                <span id="name">P1</span> :
                 <span id="kills">0</span> /
                 <span id="deaths">0</span>
+                <br>
+                <meter id="health" min="0" max="100" low="25" high="75"
+                    optimum="99" value="100"></meter>
+            </div>
+            <div id="player1">
+                <span id="name">P2</span> :
+                <span id="kills">0</span> /
+                <span id="deaths">0</span>
+                <br>
+                <meter id="health" min="0" max="100" low="25" high="75"
+                    optimum="99" value="100"></meter>
             </div>
             <div id="player2">
-                P2:
-                <span id="kills">69</span> /
-                <span id="deaths">99</span>
-            </div>
-            <div id="player3">
-                P3:
+                <span id="name">P3</span> :
                 <span id="kills">0</span> /
                 <span id="deaths">0</span>
+                <br>
+                <meter id="health" min="0" max="100" low="25" high="75"
+                    optimum="99" value="100"></meter>
             </div>
-            <div id="player4">
-                P4:
+            <div id="player3">
+                <span id="name">P4</span> :
                 <span id="kills">1</span> /
                 <span id="deaths">0</span>
+                <br>
+                <meter id="health" min="0" max="100" low="25" high="75"
+                    optimum="99" value="100"></meter>
             </div>
         </div>
 

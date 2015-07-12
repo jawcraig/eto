@@ -37,9 +37,10 @@
             "speed": 3, "turn": 3, "health": 30,
             "items": [
                 {
-                    "name": "minigun",
+                    "name": "autocannon",
                     "position": {"x": 0, "y": 10, "z": 0},
-                    "direction": {"x": 1, "y": 0, "z": 0}
+                    "direction": {"x": 1, "y": 0, "z": 0},
+                    "scale": {"x": 2, "y": 2, "z": 2}
                 },
                 {
                     "name": "mines",
@@ -66,6 +67,18 @@
             "name": "tick", "type": "walker", "model": "tick.json",
             "speed": 2, "turn": 2, "health": 60,
             "items": [{"name":"flamer"}, {"name":"jump"}]
+        },
+
+        {
+            "name": "beetle", "type": "walker", "model": "beetle.json",
+            "speed": 1, "turn": 2, "health": 60,
+            "items": [
+                {
+                    "name":"grenades",
+                    "position": {"x": 0, "y": 5, "z": 0},
+                    "direction": {"x": 0, "y": 1, "z": 1}
+                }
+            ]
         },
 
         {
@@ -129,7 +142,7 @@
         "autocannon":{
             "model": "autocannon.json",
             "type": "gun",
-            "cooldown": 0.2,
+            "cooldown": 0.5,
             "ammo": 800,
 
             "accuracy": 1,
@@ -141,15 +154,15 @@
             "model": "grenadelauncher.json",
             "type": "projectile",
             "cooldown": 2,
-            "ammo": 10,
+            "ammo": 20,
             "accuracy": 0,
             "projectile": {
                 "model": "grenade.json",
-                "damage": 20,
+                "damage": 30,
                 "splash": 10,
                 "gravity": true,
-                "speed": 5,
-                "range": 1000
+                "speed": 50,
+                "range": 100
             }
         },
         "rockets":{
