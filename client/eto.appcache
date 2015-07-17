@@ -1,0 +1,14 @@
+CACHE MANIFEST
+#v0.0 2015.07.14-19:13:00
+
+NETWORK
+/favicon.ico
+/style.css
+/client.html
+/js/client.js
+/js/three.min.js
+/js/jquery-1.11.3.min.js
+/js/rtcadapter.js
+/data/*
+
+FALLBACK

@@ -10,9 +10,11 @@ var ETO_CONFIG_DEFAULT = {
     basepath: "",
     datapath: "data/",
 
+    enable_localstorage: false,
+    enable_appcache: false,
+
     cache_textures: true,
     cache_sounds: true,
-
 
     menu_key: 27,
 
@@ -146,7 +148,7 @@ var Input = {
         }
         Input.oldPageX = event.pageX; 
         Input.oldPageY = event.pageY; 
-        $(document).on("mousemove", Input.mouseMove)
+        $(document).on("mousemove", Input.mouseMove);
     },
 
     mouseUp: function(event) {
@@ -165,6 +167,43 @@ var ResourceManager = {
     emptyMaterial: new THREE.MeshBasicMaterial({color:0x0000FF}),
     textureCache: {},
     soundCache: {},
+    stringStorageEnabled : false,
+
+    init : function() {
+        if(game.config.enable_localstorage &&
+                typeof(Storage) !== "undefined") {
+
+            ResourceManager.stringStorageEnabled = true;
+        }
+    },
+
+
+    storeString : function(name, value) {
+        if(ResourceManager.stringStorageEnabled) {
+            window.sessionStorage.setItem(name, value);
+        }
+    },
+
+    loadString : function(name) {
+        if(ResourceManager.stringStorageEnabled) {
+            return window.sessionStorage.getItem(name);
+        }
+
+        return null;
+    },
+
+    clearCache : function() {
+        if(ResourceManager.stringStorageEnabled) {
+            window.sessionStorage.clear();
+        }
+
+        if(game.config.enable_appcache &&
+                typeof(window.applicationCache) !== "undefined") {
+            // TODO: Should reload only after swapping the cache
+            window.applicationCache.update();
+        }
+    },
+
 
     dataPath: function(file) {
         return game.config.basepath + game.config.datapath + file;
@@ -199,6 +238,7 @@ var ResourceManager = {
                 ResourceManager.loadingError(url, status, error);
             },
             complete: function() {
+                ResourceManager.init();
                 game.init();
             }
         });
@@ -663,8 +703,13 @@ Entity.prototype.createParticles = function(center, radius) {
     var material = new THREE.PointCloudMaterial({
         size: radius,
         map: texture,
+        color: 0xee4422,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
         transparent: true
     });
+// TODO: depthtest, opacity, sizeAttenuation
+// color: 0xffffff,
 
     var explosion = new THREE.PointCloud(geometry, material);
     explosion.position.copy(center);
@@ -760,7 +805,8 @@ Entity.prototype.explodeProjectile = function(delta) {
 Entity.prototype.damagePlayer = function(damage, owner) {
     console.log("player hit with damage", damage, owner);
     game.assert(!isNaN(damage), "not number");
-    game.assert(typeof damage !== "null", "null");
+    game.assert(typeof damage !== "undefined", "undefined");
+    game.assert(damage !== null, "null");
     this.ai.health -= damage;
 
     game.recordPlayerHealth(this.player.index, this.ai.health,
@@ -1909,7 +1955,7 @@ Eto.prototype.recordPlayerHealth = function(index, health, maxhealth) {
     var field = $("#score").find("#player" + fieldnumber).find("#health");
     var healthdisplay = health * 100 / maxhealth;
     healthdisplay = this.clamp(healthdisplay, 0, 100);
-    field.val(healthdisplay)
+    field.val(healthdisplay);
 };
 
 Eto.prototype.recordPlayerKill = function(index) {
@@ -1919,7 +1965,7 @@ Eto.prototype.recordPlayerKill = function(index) {
 
     var fieldnumber = index;
     var field = $("#score").find("#player" + fieldnumber).find("#kills");
-    field.text(playerdata.kills)
+    field.text(playerdata.kills);
 };
 
 Eto.prototype.recordPlayerDeath = function(index) {
@@ -1929,7 +1975,7 @@ Eto.prototype.recordPlayerDeath = function(index) {
 
     var fieldnumber = index;
     var field = $("#score").find("#player" + fieldnumber).find("#deaths");
-    field.text(playerdata.deaths)
+    field.text(playerdata.deaths);
 };
 
 Eto.prototype.loadPlayerItems = function(player) {
@@ -2126,6 +2172,13 @@ Eto.prototype.setGui = function() {
     }
 
     // Network controls events
+    $("#clearcache").on("click",
+        function() {
+            game.audio.playSound(bello);
+            game.log("Clearing Cache!");
+            ResourceManager.clearCache();
+        }
+    );
 
     $("#disconnect").on("click",
         function() {
