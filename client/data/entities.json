@@ -18,9 +18,23 @@
         {
             "name": "gray",
             "model": "gray.json",
-            "collision": "terrain2.json",
+            "collision": "gray.json",
             "scale": {"x": 10, "y": 10, "z": 10},
-            "position": {"x": 0, "y": -60, "z": 0},
+            "position": {"x": 0, "y": -10, "z": 0},
+            "music": [
+                {
+                    "title": "Tempest in Tristram",
+                    "src": "tempest.mp3",
+                    "type": "audio/mpeg"
+                }
+            ]
+        },
+        {
+            "name": "field",
+            "model": "terrain3.json",
+            "collision": "terrain3.json",
+            "scale": {"x": 10, "y": 10, "z": 10},
+            "position": {"x": 0, "y": -10, "z": 0},
             "music": [
                 {
                     "title": "Tempest in Tristram",
@@ -38,7 +52,7 @@
             "items": [
                 {
                     "name": "autocannon",
-                    "position": {"x": 0, "y": 10, "z": 0},
+                    "position": {"x": 0, "y": 2, "z": 0},
                     "direction": {"x": 1, "y": 0, "z": 0},
                     "scale": {"x": 2, "y": 2, "z": 2}
                 },
@@ -110,6 +124,7 @@
         "selfdestruct":{
             "type": "special",
             "ammo": 1,
+            "range": 50,
             "damage": 100,
             "cooldown": 1,
             "splash": 20

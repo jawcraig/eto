@@ -25,7 +25,7 @@ var ETO_CONFIG_DEFAULT = {
         antialias: true
         //ShadowMapEnabled: true,
         // ?//ShadowMapType: PCFSoftShadowMap,
-        //ShadowMapCascade: true,
+        //ShadowMapCascade: true
     },
 
     camera_fov: 75,
@@ -65,7 +65,8 @@ var ETO_CONFIG_DEFAULT = {
     projectile_turn_speed: 0.3,
     explosion_size: 1,
     explosion_base_damage: 1,
-    explosion_exponent: 2,
+    explosion_exponent: 1.1,
+    selfdestruct_item: "selfdestruct",
 
     item_cooldown: 1,
     autoaim: 2 * Math.PI / 360,
@@ -167,7 +168,9 @@ var ResourceManager = {
     emptyMaterial: new THREE.MeshBasicMaterial({color:0x0000FF}),
     textureCache: {},
     soundCache: {},
-    stringStorageEnabled : false,
+    stringStorageEnabled: false,
+    loadingCounter: [],
+    maxLoading: 0,
 
     init : function() {
         if(game.config.enable_localstorage &&
@@ -177,6 +180,23 @@ var ResourceManager = {
         }
     },
 
+    loadStarted : function(name) {
+        ResourceManager.loadingCounter.push(name);
+        var length = ResourceManager.loadingCounter.length;
+        if(length > ResourceManager.maxLoading) {
+            ResourceManager.maxLoading = length;
+        }
+        game.recordLoadingCounter(length, ResourceManager.maxLoading);
+    },
+
+    loadFinished : function(name) {
+        ResourceManager.loadingCounter.pop();
+        var length = ResourceManager.loadingCounter.length;
+        if(length <= 0) {
+            ResourceManager.maxLoading = 0;
+        }
+        game.recordLoadingCounter(length, ResourceManager.maxLoading);
+    },
 
     storeString : function(name, value) {
         if(ResourceManager.stringStorageEnabled) {
@@ -272,6 +292,7 @@ var ResourceManager = {
 
         var url = ResourceManager.dataPath(file);
         game.log("Loading audio:", url);
+        ResourceManager.loadStarted(url);
 
         var request = new XMLHttpRequest();
         request.open("GET", url, true);
@@ -281,6 +302,7 @@ var ResourceManager = {
 
         request.onload = function() {
             audio.decodeAudio(sound, request.response);
+            ResourceManager.loadFinished();
         };
 
         request.send();
@@ -298,8 +320,16 @@ var ResourceManager = {
         }
 
         var url = ResourceManager.dataPath(textureurl);
+        ResourceManager.loadStarted(url);
 
-        var texture = THREE.ImageUtils.loadTexture(url);
+        var completefun = function() {
+            ResourceManager.loadFinished(url);
+        };
+        var errorfun = function() {
+            game.error("Error loading texture " + url);
+        };
+        var texture = THREE.ImageUtils.loadTexture(url,
+            THREE.UVMapping, completefun, errorfun);
 
         if(game.config.cache_textures) {
             ResourceManager.textureCache[textureurl] = texture;
@@ -313,12 +343,15 @@ var ResourceManager = {
 
         game.log("Loading collision model " + modelurl);
         var loader = new THREE.JSONLoader();
-        loader.load(ResourceManager.dataPath(modelurl),
+        var url = ResourceManager.dataPath(modelurl);
+        ResourceManager.loadStarted(url);
+        loader.load(url,
             function(geometry, materials) {
                 var material = new THREE.MeshBasicMaterial({color: 0xff0000});
                 var mesh = new THREE.Mesh(geometry, material);
                 self.setMeshProperties(mesh, self.avatar);
                 self.collisionMesh = mesh;
+                ResourceManager.loadFinished(url);
             }
         );
     },
@@ -328,7 +361,9 @@ var ResourceManager = {
 
         game.log("Loading model " + modelurl);
         var loader = new THREE.JSONLoader();
-        loader.load(ResourceManager.dataPath(modelurl),
+        var url = ResourceManager.dataPath(modelurl);
+        ResourceManager.loadStarted(url);
+        loader.load(url,
             function(geometry, materials) {
                 var buffer = new THREE.BufferGeometry();
                 buffer.fromGeometry(geometry);
@@ -341,6 +376,7 @@ var ResourceManager = {
                 self.avatar.material = material;
 
                 self.finalizeGraphics(mesh);
+                ResourceManager.loadFinished(url);
             }
         );
     },
@@ -362,7 +398,9 @@ var ResourceManager = {
 
         game.log("Loading skinned model " + modelurl);
         var loader = new THREE.JSONLoader();
-        loader.load(ResourceManager.dataPath(modelurl),
+        var url = ResourceManager.dataPath(modelurl);
+        ResourceManager.loadStarted(url);
+        loader.load(url,
             function(geometry, materials) {
                 var buffer = new THREE.BufferGeometry();
                 buffer.fromGeometry(geometry);
@@ -385,6 +423,7 @@ var ResourceManager = {
                     self.avatar.animation.play(0);
                     // self.avatar.animations = []
                 }
+                ResourceManager.loadFinished(url);
             }
         );
     },
@@ -1035,8 +1074,6 @@ Entity.prototype.fire = function(slot, delta) {
                 this.fireProjectile(slot, delta);
                 break;
             case "special":
-                game.createExplosion(this.graphics.position,
-                    slot.ai.owner, slot);
                 this.fireSpecial(slot);
                 break;
             case "particle":
@@ -1090,8 +1127,12 @@ Entity.prototype.fireGun = function(slot) {
 
     Entity.ray.set(origin, direction);
     game.log("Resulting ray: ", origin, direction);
-    game.scene.add(new THREE.ArrowHelper(direction, origin,
-        100, 0xf0f0f0));
+
+    if(Entity.hasComponent(this.arrow)) {
+        game.scene.remove(this.arrow);
+    }
+    this.arrow = new THREE.ArrowHelper(direction, origin, 200, 0xf0f0f0);
+    game.scene.add(this.arrow);
 
     if(!this.shootPlayers(slot)) {
         this.shootGround(slot);
@@ -1102,11 +1143,11 @@ Entity.prototype.shootPlayers = function(slot) {
     for(var index in game.players) {
         var player = game.players[index]; 
 
-        if(player == this.ai.owner) {
+        if(index == slot.parent.player.index) {
             continue;
         }
-        game.log("player slot shoots", this);
-        game.log("check ownership: ",player, "!= ", this.ai.owner);
+        game.log("player slot shoots", slot);
+        game.log("check hit to player: ", player.player, "!= ", slot.parent.player);
 
         var autoaim = game.config.autoaim; 
 
@@ -1116,11 +1157,11 @@ Entity.prototype.shootPlayers = function(slot) {
 
         game.log("Player shooting ray: ", Entity.ray.ray.origin,
             Entity.ray.ray.direction);
-        Entity.vector2 = player.graphics.position;
+        Entity.vector2.copy(player.graphics.position);
         Entity.vector2.sub(Entity.ray.ray.origin);
         var angle = Entity.vector2.angleTo(Entity.ray.ray.direction);
 
-        game.log(angle, "<=", autoaim);
+        game.log(angle, " angle<=autoaim", autoaim);
         if(angle <= autoaim) {
             game.log("shot ", slot, " autoaims to player: ", player);
             player.damagePlayer(slot.item.damage, this.ai.owner);
@@ -1163,10 +1204,14 @@ Entity.prototype.fireProjectile = function(slot, delta) {
 Entity.prototype.fireSpecial = function(slot) {
     game.log("Firing: ", slot.item.name);
 
-    if(slot.item.name == "selfdestruct") {
-        this.createExplosion(this, slot.item);
+    if(slot.item.name == game.config.selfdestruct_item) {
+        console.log("suicide", slot, this);
+        //this.createExplosion(slot.graphics.position, this.ai.owner, slot.item);
         this.alive = false;
         return;
+    }
+    else {
+        console.log("unknown special", slot);
     }
 
     fireSpecial(slot);
@@ -1372,8 +1417,10 @@ Entity.prototype.projectileHitsGround = function() {
 
 Entity.prototype.playerDies = function() {
     this.ai.alive = false;
-    game.createExplosion(this.graphics.position, this,
-        game.items["selfdestruct"]);
+    console.log("death ", this, game.config.selfdestruct_item,
+        game.items[game.config.selfdestruct_item]);
+    game.createExplosion(this.graphics.position, this.ai.owner,
+        game.items[game.config.selfdestruct_item]);
     this.graphics.position.set(0, 100, 0);
     this.graphics.material.color.setHex(0xFF00FF);
 };
@@ -1898,10 +1945,11 @@ Eto.prototype.randomizeMap = function() {
     var keys = Object.keys(this.maps);
     var index = Math.floor(this.random() * keys.length);
 // TODO: FIXME: BUG:    return this.maps[keys[index]];
-    return this.maps[keys[1]];
+    return this.maps[keys[2]];
 };
 
 Eto.prototype.randomizeCharacter = function(index) {
+//    return this.characters["arachnid"];
     var name = this.getSuggestedPlayerCharacter(index);
     var character = this.characters[name];
 
@@ -1966,6 +2014,11 @@ Eto.prototype.recordPlayerKill = function(index) {
     var fieldnumber = index;
     var field = $("#score").find("#player" + fieldnumber).find("#kills");
     field.text(playerdata.kills);
+};
+
+Eto.prototype.recordLoadingCounter = function(length, maxlength) {
+    $("#loadcounter").text(length);
+    $("#maxcounter").text(maxlength);
 };
 
 Eto.prototype.recordPlayerDeath = function(index) {
