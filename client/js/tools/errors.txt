@@ -1,0 +1,5 @@
+..\client.js:544: ERROR - Parse error. '}' expected
+    emptyGeometry = new THREE.BoxGeometry(3, 3, 3, 2, 2, 2),
+                  ^
+
+1 error(s), 0 warning(s)

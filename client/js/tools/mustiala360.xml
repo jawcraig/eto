@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tour start="node1">
+  <panorama id="node1" hideabout="1">
+    <view fovmode="0" pannorth="32">
+      <start pan="291" fov="70" tilt="0.5"/>
+      <min pan="0" fov="5" tilt="-68"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Mustiala360" datetime="21.5.2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Yleisnäkymää Vanhala-rakennuksen kulmalta" longitude="23.768866362426706" latitude="60.819131216141315"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Yleisnäkymää pellonlaidalta " target="" pan="-127.379" skinid="goto-hs" url="{node2}" id="Point03" tilt="2.98246"/>
+      <hotspot title="Hevospiha ja -talli" target="" pan="133.972" skinid="goto-hs" url="{node3}" id="Point02" tilt="3.93665"/>
+      <hotspot title="Konepiha" target="" pan="70.3768" skinid="goto-hs" url="{node6}" id="Point04" tilt="3.5757"/>
+      <hotspot title="Paja, hitsaus- levyntyöstö" target="" pan="47.4562" skinid="goto-hs" url="{node4}" id="Point05" tilt="4.07308"/>
+      <hotspot title="Oluttupa Isopiippu/ Kuninkaankartanon panimo" target="" pan="60.7275" skinid="goto-hs" url="{node5}" id="Point06" tilt="5.91954"/>
+      <hotspot title="Mobiilikesäkoulu 2014. Tutustumispeli. &lt;br>Käy paikan päällä ja etsi kysymys täältä..." target="" pan="-170.171" skinid="web-hs-kysymys" url="" id="Point01" tilt="2.06532"/>
+      <hotspot title="Mobiilikesäkoulu 2014. Tutustumispeli. &lt;br>Käy paikan päällä ja etsi kysymys täältä..." target="" pan="56.9257" skinid="web-hs-kysymys" url="" id="Point07" tilt="1.10064"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/yleiskuva-5_o_0.jpg" prev5url="images/yleiskuva-5_o_preview_5.jpg" prev4url="images/yleiskuva-5_o_preview_4.jpg" prev3url="images/yleiskuva-5_o_preview_3.jpg" prev2url="images/yleiskuva-5_o_preview_2.jpg" prev1url="images/yleiskuva-5_o_preview_1.jpg" prev0url="images/yleiskuva-5_o_preview_0.jpg" tile5url="images/yleiskuva-5_o_5.jpg" tilesize="1440" tile4url="images/yleiskuva-5_o_4.jpg" tile3url="images/yleiskuva-5_o_3.jpg" tilescale="1.006944444444444" tile2url="images/yleiskuva-5_o_2.jpg" tile1url="images/yleiskuva-5_o_1.jpg"/>
+    <altinput tile0url="images/yleiskuva-5_o_960_0.jpg" screensize="1024" tile5url="images/yleiskuva-5_o_960_5.jpg" tilesize="960" tile4url="images/yleiskuva-5_o_960_4.jpg" tile3url="images/yleiskuva-5_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/yleiskuva-5_o_960_2.jpg" tile1url="images/yleiskuva-5_o_960_1.jpg"/>
+    <altinput tile0url="images/yleiskuva-5_o_700_0.jpg" screensize="960" tile5url="images/yleiskuva-5_o_700_5.jpg" tilesize="700" tile4url="images/yleiskuva-5_o_700_4.jpg" tile3url="images/yleiskuva-5_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/yleiskuva-5_o_700_2.jpg" tile1url="images/yleiskuva-5_o_700_1.jpg"/>
+    <altinput tile0url="images/yleiskuva-5_o_416_0.jpg" screensize="480" tile5url="images/yleiskuva-5_o_416_5.jpg" tilesize="416" tile4url="images/yleiskuva-5_o_416_4.jpg" tile3url="images/yleiskuva-5_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/yleiskuva-5_o_416_2.jpg" tile1url="images/yleiskuva-5_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node2" hideabout="1">
+    <view fovmode="0" pannorth="320.5">
+      <start pan="254.5" fov="70" tilt="7"/>
+      <min pan="0" fov="5" tilt="-65.5"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Yleisnäkymää pellonlaidalta " datetime="2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Pellon laita, sauna järven rannassa" longitude="23.769478797912598" latitude="60.817829388479154"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Mustiala360" target="" pan="316.919" skinid="goto-hs" url="{node1}" id="Point01" tilt="0"/>
+      <hotspot title="Oluttupa Isopiippu/ Kuninkaankartanon panimo" target="" pan="322.585" skinid="goto-hs" url="{node5}" id="Point02" tilt="0"/>
+      <hotspot title="Paja, hitsaus- levyntyöstö" target="" pan="334.333" skinid="goto-hs" url="{node4}" id="Point03" tilt="0"/>
+      <hotspot title="Konepiha" target="" pan="338.46" skinid="goto-hs" url="{node6}" id="Point04" tilt="0"/>
+      <hotspot title="Museo, alakerta 2" target="" pan="-112.836" skinid="goto-hs" url="{node8}" id="Point05" tilt="2.01643"/>
+      <hotspot title="Museo, alakerta 1" target="" pan="-103.014" skinid="goto-hs" url="{node7}" id="Point06" tilt="2.24577"/>
+      <hotspot title="Hevospiha ja -talli" target="" pan="364.142" skinid="goto-hs" url="{node3}" id="Point07" tilt="0"/>
+      <hotspot title="Mobiilikesäkoulu 2014. Tutustumispeli. &lt;br>Käy paikan päällä ja etsi kysymys täältä..." target="" pan="-87.9434" skinid="web-hs-kysymys" url="" id="Point11" tilt="1.98625"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/pellonlaita-1_o_0.jpg" prev5url="images/pellonlaita-1_o_preview_5.jpg" prev4url="images/pellonlaita-1_o_preview_4.jpg" prev3url="images/pellonlaita-1_o_preview_3.jpg" prev2url="images/pellonlaita-1_o_preview_2.jpg" prev1url="images/pellonlaita-1_o_preview_1.jpg" prev0url="images/pellonlaita-1_o_preview_0.jpg" tile5url="images/pellonlaita-1_o_5.jpg" tilesize="1440" tile4url="images/pellonlaita-1_o_4.jpg" tile3url="images/pellonlaita-1_o_3.jpg" tilescale="1.006944444444444" tile2url="images/pellonlaita-1_o_2.jpg" tile1url="images/pellonlaita-1_o_1.jpg"/>
+    <altinput tile0url="images/pellonlaita-1_o_960_0.jpg" screensize="1024" tile5url="images/pellonlaita-1_o_960_5.jpg" tilesize="960" tile4url="images/pellonlaita-1_o_960_4.jpg" tile3url="images/pellonlaita-1_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/pellonlaita-1_o_960_2.jpg" tile1url="images/pellonlaita-1_o_960_1.jpg"/>
+    <altinput tile0url="images/pellonlaita-1_o_700_0.jpg" screensize="960" tile5url="images/pellonlaita-1_o_700_5.jpg" tilesize="700" tile4url="images/pellonlaita-1_o_700_4.jpg" tile3url="images/pellonlaita-1_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/pellonlaita-1_o_700_2.jpg" tile1url="images/pellonlaita-1_o_700_1.jpg"/>
+    <altinput tile0url="images/pellonlaita-1_o_416_0.jpg" screensize="480" tile5url="images/pellonlaita-1_o_416_5.jpg" tilesize="416" tile4url="images/pellonlaita-1_o_416_4.jpg" tile3url="images/pellonlaita-1_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/pellonlaita-1_o_416_2.jpg" tile1url="images/pellonlaita-1_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node3" hideabout="1">
+    <view fovmode="0" pannorth="72.5">
+      <start pan="265.5" fov="70" tilt="3.5"/>
+      <min pan="0" fov="5" tilt="-68.5"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Hevospiha ja -talli" datetime="21.5.2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Hevoset hoidossa talvikauden ajan" longitude="23.76592755317688" latitude="60.81882331086493"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Yleinäkymää pellonlaidalta " target="" pan="-64.4046" skinid="goto-hs" url="{node2}" id="Point01" tilt="1.05913"/>
+      <hotspot title="Oluttupa Isopiippu/ Kuninkaankartanon panimo" target="" pan="9.0291" skinid="goto-hs" url="{node5}" id="Point02" tilt="12.8307"/>
+      <hotspot title="Mustiala360" target="" pan="-18.6806" skinid="goto-hs" url="{node1}" id="Point03" tilt="10.3565"/>
+      <hotspot title="Paja, hitsaus- levyntyöstö" target="" pan="25.196" skinid="goto-hs" url="{node4}" id="Point04" tilt="3.42598"/>
+      <hotspot title="Konepiha" target="" pan="20.9911" skinid="goto-hs" url="{node6}" id="Point05" tilt="3.33144"/>
+      <hotspot title="Museo, alakerta 2" target="" pan="-56.5078" skinid="goto-hs" url="{node8}" id="Point07" tilt="0.957003"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/hevospiha-6_o_0.jpg" prev5url="images/hevospiha-6_o_preview_5.jpg" prev4url="images/hevospiha-6_o_preview_4.jpg" prev3url="images/hevospiha-6_o_preview_3.jpg" prev2url="images/hevospiha-6_o_preview_2.jpg" prev1url="images/hevospiha-6_o_preview_1.jpg" prev0url="images/hevospiha-6_o_preview_0.jpg" tile5url="images/hevospiha-6_o_5.jpg" tilesize="1440" tile4url="images/hevospiha-6_o_4.jpg" tile3url="images/hevospiha-6_o_3.jpg" tilescale="1.006944444444444" tile2url="images/hevospiha-6_o_2.jpg" tile1url="images/hevospiha-6_o_1.jpg"/>
+    <altinput tile0url="images/hevospiha-6_o_960_0.jpg" screensize="1024" tile5url="images/hevospiha-6_o_960_5.jpg" tilesize="960" tile4url="images/hevospiha-6_o_960_4.jpg" tile3url="images/hevospiha-6_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/hevospiha-6_o_960_2.jpg" tile1url="images/hevospiha-6_o_960_1.jpg"/>
+    <altinput tile0url="images/hevospiha-6_o_700_0.jpg" screensize="960" tile5url="images/hevospiha-6_o_700_5.jpg" tilesize="700" tile4url="images/hevospiha-6_o_700_4.jpg" tile3url="images/hevospiha-6_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/hevospiha-6_o_700_2.jpg" tile1url="images/hevospiha-6_o_700_1.jpg"/>
+    <altinput tile0url="images/hevospiha-6_o_416_0.jpg" screensize="480" tile5url="images/hevospiha-6_o_416_5.jpg" tilesize="416" tile4url="images/hevospiha-6_o_416_4.jpg" tile3url="images/hevospiha-6_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/hevospiha-6_o_416_2.jpg" tile1url="images/hevospiha-6_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node4" hideabout="1">
+    <view fovmode="0" pannorth="270.5">
+      <start pan="239.5" fov="70" tilt="-10.5"/>
+      <min pan="0" fov="5" tilt="-65"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Paja, hitsaus- levyntyöstö" datetime="2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Pajassa voidaan korjata koneita" longitude="23.766603469848633" latitude="60.82022521205955"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Mustiala360" target="" pan="134.243" skinid="goto-hs" url="{node1}" id="Point01" tilt="0"/>
+      <hotspot title="Konepiha" target="" pan="42.1639" skinid="goto-hs" url="{node6}" id="Point02" tilt="8.352779999999999"/>
+      <hotspot title="Hitsaus, oikein" target="" pan="-72.136" skinid="web-hs2" url="http://mustiala.valopi.net/hitsaus1-oikein/" id="Point03" tilt="-7.57071"/>
+      <hotspot title="Hitsaus, väärin" target="" pan="-71.9616" skinid="web-hs2" url="http://mustiala.valopi.net/hitsaus1-vaarin1/" id="Point04" tilt="-15.0592"/>
+      <hotspot title="Hitsaus, tämäkin väärin" target="" pan="-71.94670000000001" skinid="web-hs2" url="http://mustiala.valopi.net/hitsaus1-vaarin2/" id="Point05" tilt="-21.8841"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/hitsaus2-2_o_0.jpg" prev5url="images/hitsaus2-2_o_preview_5.jpg" prev4url="images/hitsaus2-2_o_preview_4.jpg" prev3url="images/hitsaus2-2_o_preview_3.jpg" prev2url="images/hitsaus2-2_o_preview_2.jpg" prev1url="images/hitsaus2-2_o_preview_1.jpg" prev0url="images/hitsaus2-2_o_preview_0.jpg" tile5url="images/hitsaus2-2_o_5.jpg" tilesize="1440" tile4url="images/hitsaus2-2_o_4.jpg" tile3url="images/hitsaus2-2_o_3.jpg" tilescale="1.006944444444444" tile2url="images/hitsaus2-2_o_2.jpg" tile1url="images/hitsaus2-2_o_1.jpg"/>
+    <altinput tile0url="images/hitsaus2-2_o_960_0.jpg" screensize="1024" tile5url="images/hitsaus2-2_o_960_5.jpg" tilesize="960" tile4url="images/hitsaus2-2_o_960_4.jpg" tile3url="images/hitsaus2-2_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/hitsaus2-2_o_960_2.jpg" tile1url="images/hitsaus2-2_o_960_1.jpg"/>
+    <altinput tile0url="images/hitsaus2-2_o_700_0.jpg" screensize="960" tile5url="images/hitsaus2-2_o_700_5.jpg" tilesize="700" tile4url="images/hitsaus2-2_o_700_4.jpg" tile3url="images/hitsaus2-2_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/hitsaus2-2_o_700_2.jpg" tile1url="images/hitsaus2-2_o_700_1.jpg"/>
+    <altinput tile0url="images/hitsaus2-2_o_416_0.jpg" screensize="480" tile5url="images/hitsaus2-2_o_416_5.jpg" tilesize="416" tile4url="images/hitsaus2-2_o_416_4.jpg" tile3url="images/hitsaus2-2_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/hitsaus2-2_o_416_2.jpg" tile1url="images/hitsaus2-2_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node5" hideabout="1">
+    <view fovmode="0" pannorth="337.5">
+      <start pan="332.5" fov="70" tilt="-8.5"/>
+      <min pan="0" fov="5" tilt="-66"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Oluttupa Isopiippu/ Kuninkaankartanon panimo" datetime="2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Hauskat illat Isopiipussa" longitude="23.768244981765747" latitude="60.81961842654464"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Mustiala360" target="" pan="-170.602" skinid="goto-hs" url="{node1}" id="Point01" tilt="2.26141"/>
+      <hotspot title="Konepiha" target="" pan="405.698" skinid="goto-hs" url="{node6}" id="Point02" tilt="0"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/isopiippu-8_o_0.jpg" prev5url="images/isopiippu-8_o_preview_5.jpg" prev4url="images/isopiippu-8_o_preview_4.jpg" prev3url="images/isopiippu-8_o_preview_3.jpg" prev2url="images/isopiippu-8_o_preview_2.jpg" prev1url="images/isopiippu-8_o_preview_1.jpg" prev0url="images/isopiippu-8_o_preview_0.jpg" tile5url="images/isopiippu-8_o_5.jpg" tilesize="1440" tile4url="images/isopiippu-8_o_4.jpg" tile3url="images/isopiippu-8_o_3.jpg" tilescale="1.006944444444444" tile2url="images/isopiippu-8_o_2.jpg" tile1url="images/isopiippu-8_o_1.jpg"/>
+    <altinput tile0url="images/isopiippu-8_o_960_0.jpg" screensize="1024" tile5url="images/isopiippu-8_o_960_5.jpg" tilesize="960" tile4url="images/isopiippu-8_o_960_4.jpg" tile3url="images/isopiippu-8_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/isopiippu-8_o_960_2.jpg" tile1url="images/isopiippu-8_o_960_1.jpg"/>
+    <altinput tile0url="images/isopiippu-8_o_700_0.jpg" screensize="960" tile5url="images/isopiippu-8_o_700_5.jpg" tilesize="700" tile4url="images/isopiippu-8_o_700_4.jpg" tile3url="images/isopiippu-8_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/isopiippu-8_o_700_2.jpg" tile1url="images/isopiippu-8_o_700_1.jpg"/>
+    <altinput tile0url="images/isopiippu-8_o_416_0.jpg" screensize="480" tile5url="images/isopiippu-8_o_416_5.jpg" tilesize="416" tile4url="images/isopiippu-8_o_416_4.jpg" tile3url="images/isopiippu-8_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/isopiippu-8_o_416_2.jpg" tile1url="images/isopiippu-8_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node6" hideabout="1">
+    <view fovmode="0" pannorth="48.5">
+      <start pan="273" fov="70" tilt="8"/>
+      <min pan="0" fov="5" tilt="-60"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Konepiha" datetime="2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Konepihalle mahtuu useampikin maatalouskone" longitude="23.766474723815918" latitude="60.81996366799006"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Paja, hitsaus- levyntyöstö" target="" pan="28.0775" skinid="goto-hs" url="{node4}" id="Point01" tilt="5.02675"/>
+      <hotspot title="Mustiala360" target="" pan="-100.647" skinid="goto-hs" url="{node1}" id="Point02" tilt="8.42817"/>
+      <hotspot title="Hevospiha ja -talli" target="" pan="-152.297" skinid="goto-hs" url="{node3}" id="Point03" tilt="1.93801"/>
+      <hotspot title="Torjunta-aineiden käsittely, oikein" target="" pan="115.357" skinid="web-hs2" url="http://mustiala.valopi.net/ruisku-oikein/" id="Point04" tilt="6.07721"/>
+      <hotspot title="Torjunta-aineiden käsittely, väärin" target="" pan="110.311" skinid="web-hs2" url="http://mustiala.valopi.net/ruisku-vaarin/" id="Point05" tilt="3.21535"/>
+      <hotspot title="Moottorisahan käsittely, oikein" target="" pan="-13.7108" skinid="web-hs2" url="http://mustiala.valopi.net/moottorisaha-oikein/" id="Point06" tilt="12.8564"/>
+      <hotspot title="Moottorinsahan käsittely, väärin" target="" pan="-22.1533" skinid="web-hs2" url="http://mustiala.valopi.net/moottorisaha-vaarin/" id="Point07" tilt="7.9909"/>
+      <hotspot title="Moottorinsahan käsittely, oikein" target="" pan="-14.9742" skinid="web-hs" url="http://mustiala.valopi.net/moottorisaha-oikein2/" id="Point08" tilt="3.10762"/>
+      <hotspot title="Mobiilikesäkoulu 2014. Tutustumispeli. &lt;br>Käy paikan päällä ja etsi kysymys täältä..." target="" pan="-9.147130000000001" skinid="web-hs-kysymys" url="" id="Point09" tilt="3.99764"/>
+      <hotspot title="Mobiilikesäkoulu 2014. Tutustumispeli. &lt;br>Käy paikan päällä ja etsi kysymys täältä..." target="" pan="115.827" skinid="web-hs-kysymys" url="" id="Point10" tilt="-0.0535413"/>
+      <hotspot title="Mobiilikesäkoulu 2014. Tutustumispeli. &lt;br>Käy paikan päällä ja etsi kysymys täältä..." target="" pan="122.033" skinid="web-hs-kysymys" url="" id="Point11" tilt="0.38729"/>
+      <hotspot title="Mobiilikesäkoulu 2014. Tutustumispeli. &lt;br>Käy paikan päällä ja etsi kysymys täältä..." target="" pan="35.1379" skinid="web-hs-kysymys" url="" id="Point12" tilt="5.80824"/>
+    </hotspots>
+    <media>
+      <image width="1237" rotx="0" roty="0" rotz="0" pan="145.004" stretch="1" fov="10.33" height="690" id="_element_0" tilt="15.4995" clickmode="1">
+        <source url="nivel1.png"/>
+      </image>
+      <image width="1197" rotx="0" roty="0" rotz="0" pan="133.152" stretch="1" fov="10.98" height="791" id="_element_1" tilt="16.568" clickmode="1">
+        <source url="nivel2.png"/>
+      </image>
+      <image width="750" rotx="0" roty="0" rotz="0" pan="117.632" stretch="1" fov="10.98" height="855" id="_element_2" tilt="17.1343" clickmode="1">
+        <source url="nivel3.png"/>
+      </image>
+      <image width="719" rotx="0" roty="0" rotz="0" pan="104.114" stretch="1" fov="12.3" height="467" id="_element_3" tilt="16.1367" clickmode="1">
+        <source url="nivel4.png"/>
+      </image>
+    </media>
+    <input tile0url="images/konepiha2-4_o_0.jpg" prev5url="images/konepiha2-4_o_preview_5.jpg" prev4url="images/konepiha2-4_o_preview_4.jpg" prev3url="images/konepiha2-4_o_preview_3.jpg" prev2url="images/konepiha2-4_o_preview_2.jpg" prev1url="images/konepiha2-4_o_preview_1.jpg" prev0url="images/konepiha2-4_o_preview_0.jpg" tile5url="images/konepiha2-4_o_5.jpg" tilesize="1440" tile4url="images/konepiha2-4_o_4.jpg" tile3url="images/konepiha2-4_o_3.jpg" tilescale="1.006944444444444" tile2url="images/konepiha2-4_o_2.jpg" tile1url="images/konepiha2-4_o_1.jpg"/>
+    <altinput tile0url="images/konepiha2-4_o_960_0.jpg" screensize="1024" tile5url="images/konepiha2-4_o_960_5.jpg" tilesize="960" tile4url="images/konepiha2-4_o_960_4.jpg" tile3url="images/konepiha2-4_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/konepiha2-4_o_960_2.jpg" tile1url="images/konepiha2-4_o_960_1.jpg"/>
+    <altinput tile0url="images/konepiha2-4_o_700_0.jpg" screensize="960" tile5url="images/konepiha2-4_o_700_5.jpg" tilesize="700" tile4url="images/konepiha2-4_o_700_4.jpg" tile3url="images/konepiha2-4_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/konepiha2-4_o_700_2.jpg" tile1url="images/konepiha2-4_o_700_1.jpg"/>
+    <altinput tile0url="images/konepiha2-4_o_416_0.jpg" screensize="480" tile5url="images/konepiha2-4_o_416_5.jpg" tilesize="416" tile4url="images/konepiha2-4_o_416_4.jpg" tile3url="images/konepiha2-4_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/konepiha2-4_o_416_2.jpg" tile1url="images/konepiha2-4_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node7" hideabout="1">
+    <view fovmode="0" pannorth="71">
+      <start pan="291.5" fov="70" tilt="-5.5"/>
+      <min pan="0" fov="5" tilt="-65.5"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Museo, alakerta 1" datetime="2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Paljon vanhoja maataloustyökaluja" longitude="23.76991868019104" latitude="60.81804910029617"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Museo, yläkerta" target="" pan="-43.4091" skinid="goto-hs" url="{node9}" id="Point03" tilt="22.6169"/>
+      <hotspot title="Museo, alakerta 2" target="" pan="-83.6853" skinid="goto-hs" url="{node8}" id="Point04" tilt="2.89551"/>
+      <hotspot title="Yleisnäkymää pellonlaidalta " target="" pan="144.469" skinid="goto-hs" url="{node2}" id="Point01" tilt="6.76399"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/museo-etuovi2-16_o_0.jpg" prev5url="images/museo-etuovi2-16_o_preview_5.jpg" prev4url="images/museo-etuovi2-16_o_preview_4.jpg" prev3url="images/museo-etuovi2-16_o_preview_3.jpg" prev2url="images/museo-etuovi2-16_o_preview_2.jpg" prev1url="images/museo-etuovi2-16_o_preview_1.jpg" prev0url="images/museo-etuovi2-16_o_preview_0.jpg" tile5url="images/museo-etuovi2-16_o_5.jpg" tilesize="1440" tile4url="images/museo-etuovi2-16_o_4.jpg" tile3url="images/museo-etuovi2-16_o_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-etuovi2-16_o_2.jpg" tile1url="images/museo-etuovi2-16_o_1.jpg"/>
+    <altinput tile0url="images/museo-etuovi2-16_o_960_0.jpg" screensize="1024" tile5url="images/museo-etuovi2-16_o_960_5.jpg" tilesize="960" tile4url="images/museo-etuovi2-16_o_960_4.jpg" tile3url="images/museo-etuovi2-16_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-etuovi2-16_o_960_2.jpg" tile1url="images/museo-etuovi2-16_o_960_1.jpg"/>
+    <altinput tile0url="images/museo-etuovi2-16_o_700_0.jpg" screensize="960" tile5url="images/museo-etuovi2-16_o_700_5.jpg" tilesize="700" tile4url="images/museo-etuovi2-16_o_700_4.jpg" tile3url="images/museo-etuovi2-16_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-etuovi2-16_o_700_2.jpg" tile1url="images/museo-etuovi2-16_o_700_1.jpg"/>
+    <altinput tile0url="images/museo-etuovi2-16_o_416_0.jpg" screensize="480" tile5url="images/museo-etuovi2-16_o_416_5.jpg" tilesize="416" tile4url="images/museo-etuovi2-16_o_416_4.jpg" tile3url="images/museo-etuovi2-16_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-etuovi2-16_o_416_2.jpg" tile1url="images/museo-etuovi2-16_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node8" hideabout="1">
+    <view fovmode="0" pannorth="314">
+      <start pan="82.5" fov="70" tilt="-5.5"/>
+      <min pan="0" fov="5" tilt="-66.5"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Museo, alakerta portaat" datetime="2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Vanhoja puisia työkaluja" longitude="23.769811391830444" latitude="60.81804386907998"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Museo, alakerta 1" target="" pan="-2.04348" skinid="goto-hs" url="{node7}" id="Point01" tilt="4.11779"/>
+      <hotspot title="Museo, yläkerta" target="" pan="-118.424" skinid="goto-hs" url="{node9}" id="Point02" tilt="25.9888"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/museo-portaat2-14_o_0.jpg" prev5url="images/museo-portaat2-14_o_preview_5.jpg" prev4url="images/museo-portaat2-14_o_preview_4.jpg" prev3url="images/museo-portaat2-14_o_preview_3.jpg" prev2url="images/museo-portaat2-14_o_preview_2.jpg" prev1url="images/museo-portaat2-14_o_preview_1.jpg" prev0url="images/museo-portaat2-14_o_preview_0.jpg" tile5url="images/museo-portaat2-14_o_5.jpg" tilesize="1440" tile4url="images/museo-portaat2-14_o_4.jpg" tile3url="images/museo-portaat2-14_o_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-portaat2-14_o_2.jpg" tile1url="images/museo-portaat2-14_o_1.jpg"/>
+    <altinput tile0url="images/museo-portaat2-14_o_960_0.jpg" screensize="1024" tile5url="images/museo-portaat2-14_o_960_5.jpg" tilesize="960" tile4url="images/museo-portaat2-14_o_960_4.jpg" tile3url="images/museo-portaat2-14_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-portaat2-14_o_960_2.jpg" tile1url="images/museo-portaat2-14_o_960_1.jpg"/>
+    <altinput tile0url="images/museo-portaat2-14_o_700_0.jpg" screensize="960" tile5url="images/museo-portaat2-14_o_700_5.jpg" tilesize="700" tile4url="images/museo-portaat2-14_o_700_4.jpg" tile3url="images/museo-portaat2-14_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-portaat2-14_o_700_2.jpg" tile1url="images/museo-portaat2-14_o_700_1.jpg"/>
+    <altinput tile0url="images/museo-portaat2-14_o_416_0.jpg" screensize="480" tile5url="images/museo-portaat2-14_o_416_5.jpg" tilesize="416" tile4url="images/museo-portaat2-14_o_416_4.jpg" tile3url="images/museo-portaat2-14_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-portaat2-14_o_416_2.jpg" tile1url="images/museo-portaat2-14_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+  <panorama id="node9" hideabout="1">
+    <view fovmode="0" pannorth="262.5">
+      <start pan="108.5" fov="70" tilt="-10"/>
+      <min pan="0" fov="5" tilt="-67.5"/>
+      <max pan="360" fov="120" tilt="90"/>
+    </view>
+    <userdata title="Museo, yläkerta" datetime="2014" description="Mustialan maatalousoppilaitos" copyright="Valopi, HAMK Mustiala" tags="" author="Jarmo Tanskanen" source="" comment="" info="Museon yläkerta" longitude="23.769843578338623" latitude="60.81801248176478"/>
+    <hotspots width="180" height="20" wordwrap="1">
+      <label width="180" backgroundalpha="1" enabled="1" height="20" backgroundcolor="0xffffff" bordercolor="0x000000" border="1" textcolor="0x000000" background="1" borderalpha="1" borderradius="1" wordwrap="1" textalpha="1"/>
+      <polystyle mode="0" backgroundalpha="0.2509803921568627" backgroundcolor="0x0000ff" bordercolor="0x0000ff" borderalpha="1"/>
+      <hotspot title="Museo, alakerta 2" target="" pan="118.27" skinid="goto-hs" url="{node8}" id="Point01" tilt="-27.4865"/>
+      <hotspot title="Museo, alakerta 1" target="" pan="160.948" skinid="goto-hs" url="{node7}" id="Point02" tilt="-45.2115"/>
+    </hotspots>
+    <media/>
+    <input tile0url="images/museo-ylakerta2-10_o_0.jpg" prev5url="images/museo-ylakerta2-10_o_preview_5.jpg" prev4url="images/museo-ylakerta2-10_o_preview_4.jpg" prev3url="images/museo-ylakerta2-10_o_preview_3.jpg" prev2url="images/museo-ylakerta2-10_o_preview_2.jpg" prev1url="images/museo-ylakerta2-10_o_preview_1.jpg" prev0url="images/museo-ylakerta2-10_o_preview_0.jpg" tile5url="images/museo-ylakerta2-10_o_5.jpg" tilesize="1440" tile4url="images/museo-ylakerta2-10_o_4.jpg" tile3url="images/museo-ylakerta2-10_o_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-ylakerta2-10_o_2.jpg" tile1url="images/museo-ylakerta2-10_o_1.jpg"/>
+    <altinput tile0url="images/museo-ylakerta2-10_o_960_0.jpg" screensize="1024" tile5url="images/museo-ylakerta2-10_o_960_5.jpg" tilesize="960" tile4url="images/museo-ylakerta2-10_o_960_4.jpg" tile3url="images/museo-ylakerta2-10_o_960_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-ylakerta2-10_o_960_2.jpg" tile1url="images/museo-ylakerta2-10_o_960_1.jpg"/>
+    <altinput tile0url="images/museo-ylakerta2-10_o_700_0.jpg" screensize="960" tile5url="images/museo-ylakerta2-10_o_700_5.jpg" tilesize="700" tile4url="images/museo-ylakerta2-10_o_700_4.jpg" tile3url="images/museo-ylakerta2-10_o_700_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-ylakerta2-10_o_700_2.jpg" tile1url="images/museo-ylakerta2-10_o_700_1.jpg"/>
+    <altinput tile0url="images/museo-ylakerta2-10_o_416_0.jpg" screensize="480" tile5url="images/museo-ylakerta2-10_o_416_5.jpg" tilesize="416" tile4url="images/museo-ylakerta2-10_o_416_4.jpg" tile3url="images/museo-ylakerta2-10_o_416_3.jpg" tilescale="1.006944444444444" tile2url="images/museo-ylakerta2-10_o_416_2.jpg" tile1url="images/museo-ylakerta2-10_o_416_1.jpg"/>
+    <control simulatemass="1" lockedmouse="0" lockedkeyboard="0" dblclickfullscreen="0" invertwheel="0" lockedwheel="0" invertcontrol="1" speedwheel="1" sensitivity="8"/>
+  </panorama>
+</tour>

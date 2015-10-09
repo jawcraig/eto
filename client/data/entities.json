@@ -1,0 +1,267 @@
+{
+    "maps": [
+        {
+            "name": "Hillside",
+            "model": "terrain.json",
+            "collision": "terraincollision.json",
+            "scale": {"x": 170, "y": 100, "z": 170},
+            "position": {"x": 0, "y": -60, "z": 0},
+            "rotation": {"x": 0, "y": -60, "z": 0},
+            "music": [
+                {
+                    "title": "Tempest in Tristram",
+                    "src": "tempest.mp3",
+                    "type": "audio/mpeg"
+                }
+            ]
+        },
+        {
+            "name": "gray",
+            "model": "gray.json",
+            "collision": "gray.json",
+            "scale": {"x": 10, "y": 10, "z": 10},
+            "position": {"x": 0, "y": -10, "z": 0},
+            "music": [
+                {
+                    "title": "Tempest in Tristram",
+                    "src": "tempest.mp3",
+                    "type": "audio/mpeg"
+                }
+            ]
+        },
+        {
+            "name": "field",
+            "model": "terrain3.json",
+            "collision": "terrain3.json",
+            "scale": {"x": 10, "y": 10, "z": 10},
+            "position": {"x": 0, "y": -10, "z": 0},
+            "music": [
+                {
+                    "title": "Tempest in Tristram",
+                    "src": "tempest.mp3",
+                    "type": "audio/mpeg"
+                }
+            ]
+        }
+    ],
+
+    "characters": [
+        {
+            "name": "ant", "type": "walker", "model": "ant.json",
+            "speed": 3, "turn": 3, "health": 30,
+            "items": [
+                {
+                    "name": "autocannon",
+                    "position": {"x": 0, "y": 2, "z": 0},
+                    "direction": {"x": 1, "y": 0, "z": 0},
+                    "scale": {"x": 2, "y": 2, "z": 2}
+                },
+                {
+                    "name": "mines",
+                    "position": {"x":0, "y":5, "z": 0}
+                }
+            ]
+        },
+
+        {
+            "name": "arachnid", "type": "walker", "model": "arachnid.json",
+            "speed": 2, "turn": 2, "health": 30,
+            "items": [
+                {
+                    "name":"missiles",
+                    "position": {"x": 0, "y": 10, "z": 0}
+                },
+                {
+                    "name":"melee"
+                }
+            ]
+        },
+
+        {
+            "name": "tick", "type": "walker", "model": "tick.json",
+            "speed": 2, "turn": 2, "health": 60,
+            "items": [{"name":"flamer"}, {"name":"jump"}]
+        },
+
+        {
+            "name": "beetle", "type": "walker", "model": "beetle.json",
+            "speed": 1, "turn": 2, "health": 60,
+            "items": [
+                {
+                    "name":"grenades",
+                    "position": {"x": 0, "y": 5, "z": 0},
+                    "direction": {"x": 0, "y": 1, "z": 1}
+                }
+            ]
+        },
+
+        {
+            "name": "bee", "type": "flyer", "model": "bee.json",
+            "speed": 3, "turn": 2, "health": 20,
+            "items": [
+                {
+                    "name": "minigun",
+                    "position": {"x": 0, "y": -5, "z": 0},
+                    "direction": {"x": 0, "y": -1, "z": 0}
+                }
+            ]
+        },
+
+        {
+            "name": "bumble", "type": "flyer", "model": "bumble.json",
+            "speed": 3, "turn": 2, "health": 30,
+            "items": [{"name":"bombs"}]
+        },
+
+        {
+            "name": "wasp", "type": "flyer", "model": "wasp.json",
+            "speed": 4, "turn": 3, "health": 10,
+            "items": [{"name":"rockets"}]
+        }
+    ],
+
+    "items": {
+        "selfdestruct":{
+            "type": "special",
+            "ammo": 1,
+            "range": 50,
+            "damage": 100,
+            "cooldown": 1,
+            "splash": 20
+        },
+        "melee":{
+            "type": "special",
+            "ammo": -1,
+            "damage": 5,
+            "cooldown": 1,
+            "range": 3 
+        },
+        "jump":{
+            "damage": 10,
+            "type": "special",
+            "range": 100,
+            "cooldown": 2,
+            "accuracy": 10
+        },
+        "minigun":{
+            "model": "minigun.json",
+            "type": "gun",
+            "cooldown": 0.05,
+            "ammo": 1000,
+
+            "accuracy": 3,
+            "autoaim": 5,
+            "damage": 3,
+            "range": 1000
+        },
+        "autocannon":{
+            "model": "autocannon.json",
+            "type": "gun",
+            "cooldown": 0.5,
+            "ammo": 800,
+
+            "accuracy": 1,
+            "autoaim": 3,
+            "damage": 5,
+            "range": 500
+        },
+        "grenades":{
+            "model": "grenadelauncher.json",
+            "type": "projectile",
+            "cooldown": 2,
+            "ammo": 20,
+            "accuracy": 0,
+            "projectile": {
+                "model": "grenade.json",
+                "damage": 30,
+                "splash": 10,
+                "gravity": true,
+                "speed": 50,
+                "range": 100
+            }
+        },
+        "rockets":{
+            "model": "rocketpod.json",
+            "type": "projectile",
+            "cooldown": 0.5,
+            "ammo": 40,
+            "accuracy": 5,
+            "projectile": {
+                "model": "rocket.json",
+                "trail": true,
+                "damage": 10,
+                "splash": 10,
+                "acceleration": 10,
+                "speed": 50,
+                "range": 500
+            }
+        },
+        "bombs":{
+            "model": "bombbay.json",
+            "type": "projectile",
+            "cooldown": 1,
+            "ammo": 20,
+            "accuracy": 5,
+            "projectile": {
+                "model": "bomb.json",
+                "damage": 50,
+                "splash": 30,
+                "gravity": true,
+                "speed": 0,
+                "range": 0
+            }
+        },
+        "mines":{
+            "model": "minebelt.json",
+            "type": "projectile",
+            "cooldown": 3,
+            "ammo": 5,
+            "accuracy": 5,
+            "projectile": {
+                "model": "mine.json",
+                "agent": "mine",
+                "damage": 100,
+                "splash": 10,
+                "gravity": true,
+                "speed": 5,
+                "range": 10
+            }
+        },
+        "missiles":{
+            "model": "missilepod.json",
+            "type": "projectile",
+            "cooldown": 5,
+            "ammo": 5,
+            "accuracy": 0,
+            "projectile": {
+                "model": "missile.json",
+                "trail": true,
+                "agent": "missile",
+                "damage": 50,
+                "splash": 10,
+                "acceleration": 5,
+                "speed": 10,
+                "range": 2000
+            }
+        },
+        "flamer":{
+            "type": "laser",
+            "model": "flamer.json",
+            "cooldown": 0,
+            "ammo": 500,
+            "accuracy": 10,
+            "damage": 4,
+            "splash": 5,
+            "range": 300
+        },
+        "laser":{
+            "type": "laser",
+            "model": "laser.json",
+            "cooldown": 0,
+            "ammo": 1000,
+            "accuracy": 0,
+            "damage": 1,
+            "range": 300
+        }
+    }
+}

@@ -1,0 +1,133 @@
+teknologiademoa: xh
+
+la 9.5.
+koodia: 12:45-14:30 Pointer
+lisää koodia: 15:10-15:38 Hotspot
+html&csää: 17:00-18:53 Editorin komponenttien ulkonäköä
+koodia 21:10 - 22:28 XML-dokumentin lataus tiedostosta ja download keskinapilla
+= 4.45h
+
+su 10.5.
+11:10-11:25 Fixed style: JSHint / closure compiler problems, removed dead code
+12:00-13:21 Pointer drag&drop
+13:21-13:47 Touch drag&drop
+14:00-14:18 Dblckick, hover to preview
+14:40-16:31 Document loading
+16:40-17:00 Fixes, packet
+= 5.05h
+18:34-19:06 Model edition for hotspot angle/title/url
+
+ma 11.05.
+12:00-12:34 editor&preview show
+tauko
+12:40-13:06 uibuttons do stuff
+13:07-14:49 editor works
+     -16:00 DELETE command fixed.
+= 3.9h
+17:55-18:15 Ruutujen välillä liikkuminen.
+19:00-20:05 Kuvien lataus.
+
+VAR preview_padding, preview_vertical_distance
+preview: title instead of url on {url}
+config:    clear_image_cache: false            // Clear image cache on scene change
+--automatic tile selection by screen size?
+/*
+Cube.prototype.deduceSize() {
+
+// loadcubes: showprogressbar?
+// windowsize = $(window).height(); container.height(); screensizes = getCubeScreenSizes[]
+// var screensize = screen.size;
+    var minimum_size = EDITOR_CONFIG.screen_size || 0;
+    cubesizes
+}
+*/
+
+--panoraaman ruudun vaihto - selectboxilla.
+-kuvien lataus ->
+, kameran asetusten lataaminen panoraamasta, paljon virhetilanteiden hanskausta, käyttäjäsyötteen validointia, testausta,..
+
+-TODO: make semi-transparent overlay to make editor modality visible - functiondisableEditor()
+
+
+
+-tiledata - from panorama - screen size selector? input, preview, altinput[screensize]
+-? load <media/> image data from panorama?
+-?load viewsettings from panorama
+
+--container mouseenter, mouseleave -> disable editor
+
+--ESTO: originaali-linkkejä ei voi muokata/poistaa: attribute user-created="true"
+   - non-user-created:
+      -- preview: change url {nodeid} -> "tour.panoramas[nodeid].title ({nodeid})"
+        - preview background is different (change css class)
+        - doubleclick: follow link
+        - can't open editor
+        - can't edit, move, delete
+
+
+UNDO button (undo stack, redo stack for each panorama!)
+
+
+--set window title <- panorama title
+
+--user data validation
+--xml error handling
+--XSS security problems
+
+
+---"merge" inputs from several users to usable version? MUST HAVE CENTRAL CONTROL!
+
+---BUG: preview tooltip absorbs mouse events when in bottom right corner
+---TODO: use $.on instead of $.bind, setListener()
+--- ?? load userdata, control from panorama?
+--- load media tag images from panorama
+
+--favicon.ico
+--- button images & ui design
+
+----login security
+
+----------- removing a node leaves extraneouswhitespace textnode(s) "\n  " in the file
+
+----lokalisointi: tekstien kääntäminen kohdekielelle & oikoluku
+
+----performance testing
+---file comments
+--comment code more?
+
+
+
+exec \tools\server.bat
+sh tools/publish.sh
+
+
+
+TODO maybe later: Fix coordinates: - coordinate discrepancy in many places!
+lon, lat != pan, tilt!!!
+
+
+EDITOR:
+radio box:
+url target: textinput URL
+node target: droplist of nodes
+
+
+// support undo command pattern
+function add() {
+}
+move(tilt, pan)
+function changeproperties(title, url) {
+}
+function remove() {
+execute = function { this.model = hotspot.model;
+   panorama.hotspotcontainer.removeChild(hotspot.model); }
+
+undo = function { panorama.hotspotcontainer.appenDchild(oldchild) };
+
+};
+
+
+
+enabling button & other controls: mouseclick capture off
+$(button1, button2, div1, div2).on("mouseenter", disable3DEditor());
+$(button1, button2, div1, div2).on("mouseleave", enable3dEditor());

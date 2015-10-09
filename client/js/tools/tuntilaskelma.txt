@@ -1,0 +1,171 @@
+teknologiademoa: xh
+
+la 9.5.
+koodia: 12:45-14:30 Pointer
+lisää koodia: 15:10-15:38 Hotspot
+html&csää: 17:00-18:53 Editorin komponenttien ulkonäköä
+koodia 21:10 - 22:28 XML-dokumentin lataus tiedostosta ja download keskinapilla
+= 4.45h
+
+su 10.5.
+11:10-11:25 Fixed style: JSHint / closure compiler problems, removed dead code
+12:00-13:21 Pointer drag&drop
+13:21-13:47 Touch drag&drop
+14:00-14:18 Dblckick, hover to preview
+14:40-16:31 Document loading
+16:40-17:00 Fixes, packet
+= 5.05h
+18:34-19:06 Model edition for hotspot angle/title/url
+
+ma 11.05.
+12:00-12:34 editor&preview show
+tauko
+12:40-13:06 uibuttons do stuff
+13:07-14:49 editor works
+     -16:00 DELETE command fixed.
+= 3.9h
+17:55-18:15 Ruutujen välillä liikkuminen.
+19:00-20:05 Kuvien lataus.
+22:00-22:42 XML:n uploadaus POST:lla. Kuvien vaihtaminen korjattu.
+22:53-23:08 node selection dropdown
+= 3h
+
+=MILESTONE= alpha0
+
+ti-to: vähemmän tarpeellista random-sälää. tunteja...
+in beta:
+feature-skinchange: 2h
+feature-smartsize: 1h
+feature-loadpreview: 2h
+feature-undoredo: 3h
+
+implemented:
+feature-finnish: 15min
+feature-webgl: 15min
+
+
+TODO: mouse 
+
+
+Feature: skinid is determined automatically; behaviour is interesting.
+BUG: WHITESPACE CORRECTION IN XML SOMETIMES BREAKS: append/remove/undo/redo first OR last (original) element many times -> boof
+Feature: Some user links are escaped when put into the XML file. can be turned off by escape_user_data!
+
+työn alla:
+-cache cubes
+--config:    clear_image_cache: false            // Clear image cache on scene change
+
+
+branch: localization ----lokalisointi: tekstien kääntäminen kohdekielelle & oikoluku
+
+
+---!!! dist-paketin rakentaminen
+
+
+seuraavaksi:
+develop:
+--testausta,..
+TODO: Check if skinchange title/url input data breaks something useful
+At least it breaks some urls (&?=) and quotes " becomes &amp;&quot;
+
+
+
+--- info : userdata: info
+--paljon virhetilanteiden hanskausta
+
+--- kuvien lataus panoraamasta:
+		-? load <media/> image data from panorama?
+    <media>
+      <image width="1237" rotx="0" roty="0" rotz="0" pan="145.004" stretch="1" fov="10.33" height="690" id="_element_0" tilt="15.4995" clickmode="1">
+        <source url="nivel1.png"/>
+
+
+exec \tools\server.bat
+sh tools/publish.sh
+
+
+
+
+--- ?? load userdata, control from panorama?
+--- load media tag images from panorama
+
+
+Server side:
+----"merge" inputs from several users to usable version? MUST HAVE CENTRAL CONTROL?
+
+
+PUBLISH: / production
+alpha0 out.
+alpha1: publish production alpha:
+-validate html/css
+-run static checks (compiler, jshint, jlint)
+-check performance
+-check security
+-test on iOS browser, safari
+-file start comments (sipex, jawcraig janne.tervo@iki.fi)
+--document usage?
+
+
+
+
+PERFORMANCE:
+---luokkien splittaus eri tiedostoihin -> compiler+concatenation -> min.js
+--profiler runs.
+--change to webgl branch -> breaks existing ANDROID chrome compatibility
+
+
+
+SECURITY:
+* server side input is trusted.
+* (script can be modified, data can be fabricated,
+so anything goes!)
+  -> goal1: ensure working -> data validation instead of security validation
+  -> goal: remove obvious performance damaging bugs (allow urls to work etc).
+ --XSS security problems? ??--user data validation <- meh, not our problem.
+*login security & user accounting?
+
+
+-comment code more?
+
+
+
+exec \tools\server.bat
+sh tools/publish.sh
+
+
+? HOTSPOT HINTS using arrow helper
+
+
+
+---?preview: title instead of url on {url}
+
+
+config:    clear_image_cache: false            // Clear image cache on scene change
+-? load <media/> image data from panorama?
+-?load viewsettings from panorama
+
+
+
+--ESTO: originaali-linkkejä ei voi muokata/poistaa: attribute user-created="true"
+   - non-user-created:
+      -- preview: change url {nodeid} -> "tour.panoramas[nodeid].title ({nodeid})"
+        - preview background is different (change css class)
+        - doubleclick: follow link
+        - can't open editor
+        - can't edit, move, delete
+
+
+
+--set window title <- panorama title
+
+
+--favicon.ico
+
+
+------------------joskus tulevaisuudessa jos tarpeen: ????--ESTO: originaali-linkkejä ei voi muokata/poistaa: attribute user-created="true"
+   - non-user-created doubleclick: follow link
+
+
+TODO maybe later: Fix coordinates: - coordinate discrepancy in many places!
+lon, lat != pan, tilt!!!
+... IF IT WORKS, wHY CHANGE IT?!

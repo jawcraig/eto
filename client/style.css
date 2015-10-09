@@ -1,0 +1,166 @@
+body {
+    background-color: rgb(200,200,200);
+    margin: 0px;
+    position: fixed;
+    overflow: hidden;
+
+    color: #AAA;
+    font-weight: bold;
+    font-family: sans-serif;
+    text-transform: uppercase;
+}
+
+input, select, checkbox, button {
+    appearance: none;
+    background: #ccc;
+    border: 0px;
+    border-radius: 2px;
+    user-select: none;
+}
+
+#container {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 1;
+    opacity: 1;
+}
+
+#controls {
+    position: absolute;
+    width: 800px;
+    left: 800px;
+    top: 0px;
+    z-index: 2;
+    float: right;
+}
+
+#settings {
+    position: absolute;
+    left: 400px;
+    top: 200px;
+}
+
+.hidden {
+    display: none;
+}
+
+.tabs {
+    position: relative;
+    min-height: 400px;
+    min-width: 500px;
+    clear: both;
+    z-index: 3;
+}
+
+.tab {
+    float: left;
+}
+
+.tab label.tablabel {
+    background: #000;
+    padding: 10px;
+    border: 0px;
+    border-radius: 3px;
+    margin-left: -1px;
+    position: relative;
+    left: 1px;
+    user-select: none;
+}
+
+.tab [type=radio] {
+    display: none;
+}
+
+.nonselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.content {
+    position: absolute;
+    top: 28px;
+    left: 0px;
+    background: #;
+    right: 0;
+    bottom: 0;
+    padding: 20px;
+    border: 0px;
+    border-radius: 3px;
+    background: #222;
+}
+
+[type=radio]:checked ~ label {
+    background: #222;
+    border-bottom: 2px solid #222;
+    z-index: 3;
+}
+
+[type=radio]:checked ~label ~ .content {
+    z-index: 2;
+}
+
+tr.tooltip::before {
+    content: attr(tip) ;   
+    position:absolute;
+    z-index: 4;
+    white-space:nowrap;
+    bottom:9999px;
+    left: 50%;
+    background:#000;
+    color:#999;
+    padding:0px 7px;
+    line-height: 24px;
+    height: 24px;
+    opacity: 0;  
+    transition:opacity 0.4s ease-out; 
+}
+     
+tr.tooltip:hover::before {
+    opacity: 1;
+    bottom:-35px;
+}
+
+
+#score {
+    background-color: rgba(3, 3, 3, 120);
+    position: absolute;
+    width: 80px;
+    left: 10px;
+    top: 10px;
+    z-index: 2;
+    border: 0px solid;
+    border-radius: 3px;
+    padding: 3px;
+}
+
+#score #health {
+    height: 5px;
+}
+
+#score #player0 {
+    color: #F00;
+    margin-bottom: 5px;
+    white-space: nowrap;
+}
+#score #player1 {
+    color: #0F0;
+    margin-bottom: 5px;
+    white-space: nowrap;
+}
+#score #player2 {
+    color: #00F;
+    margin-bottom: 5px;
+    display: none;
+    white-space: nowrap;
+}
+#score #player3 {
+    color: #616;
+    margin-bottom: 5px;
+    display: none;
+    white-space: nowrap;
+}
